@@ -23,6 +23,8 @@ int main()
     // Create general socket
     int general_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (general_sockfd < 0) exit(1);
+    int enable = 1;
+    if (setsockopt(general_sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) exit(6);
     
     sockaddr_in server_address;
     server_address.sin_family = AF_INET;
