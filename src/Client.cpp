@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <string>
 #include <string.h>
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h> 
+#include <netdb.h>
+#include "../include/ClientUI.hpp"
 
 typedef struct _packet
 {
@@ -29,6 +30,8 @@ int main(int argc, char *argv[])
         std::cout << "usage: " << argv[0] << " <hostname> <port>\n";
         exit(EXIT_SUCCESS);
     }
+
+    ClientUI ui = ClientUI();
     
     server = gethostbyname(argv[1]);
     if (server == NULL) exit(EXIT_FAILURE);
@@ -46,9 +49,7 @@ int main(int argc, char *argv[])
 
     while(true)
     {
-        std::cout << "> ";
-        std::cin >> pkt.payload;
-        std::cout << "message: \"" << pkt.payload << "\"\n";
+        strcpy(pkt.payload, ui.read().c_str());
 
         pkt.type = 1;
         pkt.seqn = 2;
