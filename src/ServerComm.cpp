@@ -115,7 +115,7 @@ int ServerComm::_listen()
 int ServerComm::_accept()
 {
     sockaddr_in client_address;
-    socklen_t client_address_length;
+    socklen_t client_address_length = sizeof(struct sockaddr_in);
     int new_sockfd = accept(socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_length);
     if (new_sockfd < 0)
     {
