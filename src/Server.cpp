@@ -1,13 +1,5 @@
-#include <iostream>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string>
-#include <string.h>
-#include <mutex>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include "../include/ServerComm.hpp"
+#include <mutex>
 
 void* run_client_threads(void* args);
 void* run_client_cmd_thread(void* args);
