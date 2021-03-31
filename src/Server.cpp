@@ -3,22 +3,78 @@
 #include <stdlib.h>
 #include <string>
 #include <string.h>
+#include <mutex>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "../include/ServerComm.hpp"
 
+void* run_client_threads(void* args);
+void* run_client_cmd_thread(void* args);
+void* run_client_notif_thread(void* args);
+
 int main()
 {
     ServerComm comm_manager = ServerComm();
+    std::list<pthread_t> threads = std::list<pthread_t>();
 
-    int new_sockfd = comm_manager._accept();
+    pthread_mutex_t comm_manager_lock;
+    pthread_mutex_init(&comm_manager_lock, NULL);
 
-    int n;
+    // Run the server indefinitely
+    while (true)
+    {
+        // Accept first pending connection
+        int client_sockfd = comm_manager._accept();
+
+        client_thread_params ctp = create_client_thread_params(&comm_manager, client_sockfd, &comm_manager_lock);
+
+        // Launch new thread to deal with client
+        pthread_t client_thread;
+        pthread_create(&client_thread, NULL, run_client_threads, &ctp);
+        threads.push_back(client_thread);
+    }
+
+    // Wait for joining all threads
+    for (pthread_t t : threads) pthread_join(t, NULL);
+
+    pthread_mutex_destroy(&comm_manager_lock);
+
+    return 0;
+}
+
+void* run_client_threads(void* args)
+{
+    // Run the two client threads (for commands and notifications)
+    pthread_t client_cmd_thread;
+    pthread_t client_notif_thread;
+    pthread_create(&client_cmd_thread, NULL, run_client_cmd_thread, args);
+    // pthread_create(&client_notif_thread, NULL, run_client_notif_thread, args);
+
+    pthread_join(client_cmd_thread, NULL);
+    // pthread_join(client_notif_thread, NULL);
+
+    // When both threads are joined, close the dedicated socket
+    client_thread_params ctp = *((client_thread_params*)args);
+    close(ctp.new_sockfd);
+
+    return NULL;
+}
+
+void* run_client_cmd_thread(void* args)
+{
+    client_thread_params ctp = *((client_thread_params*)args);
+    ServerComm comm_manager = *ctp.comm_manager;
+    int sockfd = ctp.new_sockfd;
+    pthread_mutex_t* comm_manager_lock = ctp.comm_manager_lock;
+
     packet pkt;
     while(strcmp(pkt.payload, "exit") != 0)
     {
-        comm_manager.read_pkt(new_sockfd, &pkt);
+        // TODO: this mutex logic seems wrong...
+        pthread_mutex_lock(comm_manager_lock);
+        comm_manager.read_pkt(sockfd, &pkt);
+        pthread_mutex_unlock(comm_manager_lock);
 
         std::cout << "type: " << pkt.type << std::endl;
         std::cout << "seqn: " << pkt.seqn << std::endl;
@@ -26,11 +82,15 @@ int main()
         std::cout << "payload: " << pkt.payload << std::endl;
 
         pkt = create_packet(1,-1,0, std::string("Message received!"));
-        comm_manager.write_pkt(new_sockfd, pkt);
+        pthread_mutex_lock(comm_manager_lock);
+        comm_manager.write_pkt(sockfd, pkt);
+        pthread_mutex_unlock(comm_manager_lock);
     }
 
-    // Close sockets
-    close(new_sockfd);
+    return NULL;
+}
 
-    return 0;
+void* run_client_notif_thread(void* args)
+{
+    return NULL;
 }

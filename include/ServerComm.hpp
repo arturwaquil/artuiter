@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <string>
 #include <string.h>
+#include <thread>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -40,5 +41,15 @@ class ServerComm {
 
         int port;
 };
+
+typedef struct _client_thread_params
+{
+    ServerComm* comm_manager;
+    int new_sockfd;
+    pthread_mutex_t* comm_manager_lock;
+
+} client_thread_params;
+
+client_thread_params create_client_thread_params(ServerComm* comm_manager, int new_sockfd, pthread_mutex_t* comm_manager_lock);
 
 #endif
