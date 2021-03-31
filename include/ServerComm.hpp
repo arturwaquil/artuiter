@@ -27,6 +27,8 @@ class ServerComm {
         int _bind();
         int _listen();
 
+        void error(std::string error_message);
+
         int socket_file_descriptor;
 
         int port;

@@ -24,6 +24,8 @@ class ClientComm {
         int _create();
         int _connect();
 
+        void error(std::string error_message);
+
         int socket_file_descriptor;
 
         std::string hostname;
