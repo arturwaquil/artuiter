@@ -14,7 +14,7 @@ class ClientUI {
     private:
         // ~ClientUI();
         std::list<std::string> printing_queue;
-        pthread_mutex_t* mutex;
+        pthread_mutex_t mutex;
 };
 
 #endif

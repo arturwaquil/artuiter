@@ -66,15 +66,15 @@ void* run_client_cmd_thread(void* args)
     client_thread_params ctp = *((client_thread_params*)args);
     ServerComm comm_manager = *ctp.comm_manager;
     int sockfd = ctp.new_sockfd;
-    pthread_mutex_t* comm_manager_lock = ctp.comm_manager_lock;
+    pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 
     packet pkt;
     while(strcmp(pkt.payload, "exit") != 0)
     {
         // TODO: this mutex logic seems wrong...
-        pthread_mutex_lock(comm_manager_lock);
+        pthread_mutex_lock(&comm_manager_lock);
         comm_manager.read_pkt(sockfd, &pkt);
-        pthread_mutex_unlock(comm_manager_lock);
+        pthread_mutex_unlock(&comm_manager_lock);
 
         std::cout << "type: " << pkt.type << std::endl;
         std::cout << "seqn: " << pkt.seqn << std::endl;
@@ -82,9 +82,9 @@ void* run_client_cmd_thread(void* args)
         std::cout << "payload: " << pkt.payload << std::endl;
 
         pkt = create_packet(1,-1,0, std::string("Message received!"));
-        pthread_mutex_lock(comm_manager_lock);
+        pthread_mutex_lock(&comm_manager_lock);
         comm_manager.write_pkt(sockfd, pkt);
-        pthread_mutex_unlock(comm_manager_lock);
+        pthread_mutex_unlock(&comm_manager_lock);
     }
 
     return NULL;
