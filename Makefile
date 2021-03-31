@@ -10,11 +10,13 @@ all: app_client app_server
 CLIENT_DEPS += $(OBJ_DIR)/Client.o
 CLIENT_DEPS += $(OBJ_DIR)/ClientUI.o
 CLIENT_DEPS += $(OBJ_DIR)/ClientComm.o
+CLIENT_DEPS += $(OBJ_DIR)/Packet.o
 app_client: $(CLIENT_DEPS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 SERVER_DEPS += $(OBJ_DIR)/Server.o
 SERVER_DEPS += $(OBJ_DIR)/ServerComm.o
+SERVER_DEPS += $(OBJ_DIR)/Packet.o
 app_server: $(SERVER_DEPS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
