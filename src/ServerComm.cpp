@@ -45,6 +45,7 @@ int ServerComm::read_pkt(int socket, packet* pkt)
     if (n < 0)
     {
         std::cout << "[ERROR] Couldn't read packet from socket." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
     return 0;
@@ -56,6 +57,7 @@ int ServerComm::write_pkt(int socket, packet pkt)
     if (n < 0)
     {
         std::cout << "[ERROR] Couldn't write packet to socket." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
     return 0;
@@ -67,6 +69,7 @@ int ServerComm::_create()
     if (socket_file_descriptor < 0)
     {
         std::cout << "[ERROR] Couldn't create socket." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -75,6 +78,7 @@ int ServerComm::_create()
     if (setsockopt(socket_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
     {
         std::cout << "[ERROR] Couldn't set socket option to allow address reuse." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -94,6 +98,7 @@ int ServerComm::_bind()
     if (binded < 0)
     {
         std::cout << "[ERROR] Couldn't bind server to port 4000." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -106,6 +111,7 @@ int ServerComm::_listen()
     if (listen(socket_file_descriptor, 3) < 0)
     {
         std::cout << "[ERROR] Couldn't put server to listen to connections." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
     return 0;
@@ -120,6 +126,7 @@ int ServerComm::_accept()
     if (new_sockfd < 0)
     {
         std::cout << "[ERROR] Couldn't accept first connection in the queue." << std::endl;
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
 

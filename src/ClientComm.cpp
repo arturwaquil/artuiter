@@ -37,6 +37,7 @@ int ClientComm::read_pkt(packet* pkt)
     if (n < 0)
     {
         ui.write("[ERROR] Couldn't read packet from socket.");
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
     return 0;
@@ -48,6 +49,7 @@ int ClientComm::write_pkt(packet pkt)
     if (n < 0)
     {
         ui.write("[ERROR] Couldn't write packet to socket.");
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
     return 0;
@@ -59,6 +61,7 @@ int ClientComm::_create()
     if (socket_file_descriptor < 0)
     {
         ui.write("[ERROR] Couldn't create socket.");
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
     return 0;
@@ -72,6 +75,7 @@ int ClientComm::_connect()
     if (server == NULL)
     {
         ui.write("[ERROR] Couldn't get server by hostname.");
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -85,6 +89,7 @@ int ClientComm::_connect()
     if (connect(socket_file_descriptor, (struct sockaddr *) &server_address, sizeof(server_address)) < 0)
     {
         ui.write("[ERROR] Couldn't connect to server.");
+        std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
         exit(EXIT_FAILURE);
     }
 
