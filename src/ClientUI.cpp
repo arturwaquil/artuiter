@@ -10,7 +10,7 @@ std::string ClientUI::read()
     pthread_mutex_lock(&mutex);
     std::cout << "> ";
     std::string message;
-    std::cin >> message;
+    std::getline(std::cin, message);
     pthread_mutex_unlock(&mutex);
 
     return message;
