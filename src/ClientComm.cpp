@@ -1,15 +1,5 @@
 #include "../include/ClientComm.hpp"
 
-packet create_packet(uint16_t type, uint16_t seqn, uint16_t timestamp, std::string payload)
-{
-    packet pkt;
-    pkt.type = type;
-    pkt.seqn = seqn;
-    pkt.timestamp = timestamp;
-    strcpy(pkt.payload, payload.c_str());
-    return pkt;
-}
-
 ClientComm::ClientComm(std::string _hostname, std::string _port, ClientUI _ui)
 {
     hostname = _hostname;

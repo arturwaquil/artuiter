@@ -10,17 +10,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include "ClientUI.hpp"
-
-typedef struct _packet
-{
-    uint16_t type;  // DATA or CMD. TODO: is it necessary?
-    uint16_t seqn;
-    uint16_t timestamp;
-    char payload[256];
-
-} packet;
-
-packet create_packet(uint16_t type, uint16_t seqn, uint16_t timestamp, std::string payload);
+#include "Packet.hpp"
 
 class ClientComm {
     public:

@@ -1,15 +1,5 @@
 #include "../include/ServerComm.hpp"
 
-packet create_packet(uint16_t type, uint16_t seqn, uint16_t timestamp, std::string payload)
-{
-    packet pkt;
-    pkt.type = type;
-    pkt.seqn = seqn;
-    pkt.timestamp = timestamp;
-    strcpy(pkt.payload, payload.c_str());
-    return pkt;
-}
-
 client_thread_params create_client_thread_params(ServerComm* comm_manager, int new_sockfd, pthread_mutex_t* comm_manager_lock)
 {
     client_thread_params ctp;

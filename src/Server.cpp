@@ -79,7 +79,7 @@ void* run_client_cmd_thread(void* args)
         std::cout << "timestamp: " << pkt.timestamp << std::endl;
         std::cout << "payload: " << pkt.payload << std::endl;
 
-        pkt = create_packet(1,-1,0, std::string("Message received!"));
+        pkt = create_packet(reply_command, -1, 0, std::string("Message received!"));
         pthread_mutex_lock(&comm_manager_lock);
         comm_manager.write_pkt(sockfd, pkt);
         pthread_mutex_unlock(&comm_manager_lock);

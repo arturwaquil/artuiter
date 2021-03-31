@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     while(true)
     {
         std::string message = ui.read();
-        pkt = create_packet(1, 2, 1234, message);
+        pkt = create_packet(command, 2, 1234, message);
         comm_manager.write_pkt(pkt);
 
         comm_manager.read_pkt(&pkt);
