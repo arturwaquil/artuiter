@@ -15,11 +15,15 @@ void* run_client_notif_thread(void* args);
 
 int main()
 {
+    std::cout << "Initializing server..." << std::endl;
+
     ServerComm comm_manager = ServerComm();
     std::list<pthread_t> threads = std::list<pthread_t>();
 
     pthread_mutex_t comm_manager_lock;
     pthread_mutex_init(&comm_manager_lock, NULL);
+
+    std::cout << "Server initialized." << std::endl;
 
     // Run the server indefinitely
     while (true)
@@ -39,6 +43,8 @@ int main()
     for (pthread_t t : threads) pthread_join(t, NULL);
 
     pthread_mutex_destroy(&comm_manager_lock);
+
+    std::cout << "Exiting..." << std::endl;
 
     return 0;
 }

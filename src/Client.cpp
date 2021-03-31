@@ -18,8 +18,12 @@ int main(int argc, char *argv[])
         exit(EXIT_SUCCESS);
     }
 
+    std::cout << "Initializing client..." << std::endl;
+
     ClientUI ui = ClientUI();
     ClientComm comm_manager = ClientComm(argv[1], argv[2], ui);
+
+    std::cout << "Client initialized." << std::endl;
 
     packet pkt;
 
@@ -32,6 +36,8 @@ int main(int argc, char *argv[])
         comm_manager.read_pkt(&pkt);
         std::cout << pkt.payload << std::endl;
     }
+
+    std::cout << "Exiting..." << std::endl;
 
     return 0;
 }
