@@ -60,9 +60,11 @@ int main()
 
 void* run_client_threads(void* args)
 {
+    client_thread_params ctp = *((client_thread_params*)args);
+
     // Run the two client threads (for commands and notifications)
     pthread_t client_cmd_thread;
-    pthread_t client_notif_thread;
+    // pthread_t client_notif_thread;
     pthread_create(&client_cmd_thread, NULL, run_client_cmd_thread, args);
     // pthread_create(&client_notif_thread, NULL, run_client_notif_thread, args);
 
@@ -70,7 +72,6 @@ void* run_client_threads(void* args)
     // pthread_join(client_notif_thread, NULL);
 
     // When both threads are joined, close the dedicated socket
-    client_thread_params ctp = *((client_thread_params*)args);
     close(ctp.new_sockfd);
 
     return NULL;
@@ -83,12 +84,14 @@ void* run_client_cmd_thread(void* args)
     pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 
     packet pkt;
-    while(strcmp(pkt.payload, "exit") != 0)
+    while(true)
     {
         // TODO: this mutex logic seems wrong...
         pthread_mutex_lock(&comm_manager_lock);
         comm_manager.read_pkt(sockfd, &pkt);
         pthread_mutex_unlock(&comm_manager_lock);
+
+        if (pkt.type == client_halt) break;
 
         std::cout << "type: " << pkt.type << std::endl;
         std::cout << "seqn: " << pkt.seqn << std::endl;

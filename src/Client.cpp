@@ -7,7 +7,6 @@ std::atomic<bool> quit(false);    // signal flag
 
 void sigIntHandler(int signum)
 {
-    // TODO: notify server that client is down (i.e. send client_halt message)
     quit.store(true);
 }
 
@@ -38,18 +37,21 @@ int main(int argc, char *argv[])
         if (std::cin.eof()) break;
         if (message.empty()) continue;
 
-        if (!quit.load()) break;
+        if (quit.load()) break;
 
         // Send command to server
         pkt = create_packet(command, 2, 1234, message);
         comm_manager.write_pkt(pkt);
 
-        if (!quit.load()) break;
+        if (quit.load()) break;
 
         // Receive server's reply to the command
         comm_manager.read_pkt(&pkt);
         std::cout << pkt.payload << std::endl;
     }
+
+    // Notify server that client is down
+    comm_manager.write_pkt(create_packet(client_halt, 0, 1234, ""));
 
     std::cout << std::endl << "Exiting..." << std::endl;
 
