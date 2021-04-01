@@ -15,11 +15,12 @@ void* run_client_threads(void* args);
 void* run_client_cmd_thread(void* args);
 void* run_client_notif_thread(void* args);
 
+ServerComm comm_manager;
+
 int main()
 {
     std::cout << "Initializing server..." << std::endl;
 
-    ServerComm comm_manager = ServerComm();
     std::list<pthread_t> threads = std::list<pthread_t>();
 
     pthread_mutex_t comm_manager_lock;
@@ -37,7 +38,7 @@ int main()
         // TODO: (need to fix) when SIGINT is received, _accept() returns errno 4 (Interrupted system call) 
         int client_sockfd = comm_manager._accept();
 
-        client_thread_params ctp = create_client_thread_params(&comm_manager, client_sockfd, &comm_manager_lock);
+        client_thread_params ctp = create_client_thread_params(client_sockfd, &comm_manager_lock);
 
         if (quit.load()) break;
 
@@ -78,7 +79,6 @@ void* run_client_threads(void* args)
 void* run_client_cmd_thread(void* args)
 {
     client_thread_params ctp = *((client_thread_params*)args);
-    ServerComm comm_manager = *ctp.comm_manager;
     int sockfd = ctp.new_sockfd;
     pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 

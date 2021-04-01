@@ -1,9 +1,8 @@
 #include "../include/ServerComm.hpp"
 
-client_thread_params create_client_thread_params(ServerComm* comm_manager, int new_sockfd, pthread_mutex_t* comm_manager_lock)
+client_thread_params create_client_thread_params(int new_sockfd, pthread_mutex_t* comm_manager_lock)
 {
     client_thread_params ctp;
-    ctp.comm_manager = comm_manager;
     ctp.new_sockfd = new_sockfd;
     ctp.comm_manager_lock = comm_manager_lock;
     return ctp;
