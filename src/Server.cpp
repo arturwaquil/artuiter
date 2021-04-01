@@ -1,5 +1,15 @@
 #include "../include/ServerComm.hpp"
+#include "../include/Signal.hpp"
 #include <mutex>
+#include <atomic>
+
+std::atomic<bool> quit(false);    // signal flag
+
+void sigIntHandler(int signum)
+{
+    // TODO: notify all clients that server is down (i.e. send server_halt message)
+    quit.store(true);
+}
 
 void* run_client_threads(void* args);
 void* run_client_cmd_thread(void* args);
@@ -15,15 +25,21 @@ int main()
     pthread_mutex_t comm_manager_lock;
     pthread_mutex_init(&comm_manager_lock, NULL);
 
+    // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
+    set_signal_action(SIGINT, sigIntHandler);
+
     std::cout << "Server initialized." << std::endl;
 
-    // Run the server indefinitely
-    while (true)
+    // Run the server until SIGINT
+    while(!quit.load())
     {
         // Accept first pending connection
+        // TODO: (need to fix) when SIGINT is received, _accept() returns errno 4 (Interrupted system call) 
         int client_sockfd = comm_manager._accept();
 
         client_thread_params ctp = create_client_thread_params(&comm_manager, client_sockfd, &comm_manager_lock);
+
+        if (quit.load()) break;
 
         // Launch new thread to deal with client
         pthread_t client_thread;
