@@ -65,5 +65,5 @@ int ClientComm::_connect()
 void ClientComm::error(std::string error_message)
 {
     ui.write("[ERROR] " + error_message + "\n\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)));
-    exit(EXIT_FAILURE);
+    exit(errno);
 }

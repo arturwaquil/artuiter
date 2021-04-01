@@ -94,5 +94,5 @@ void ServerComm::error(std::string error_message)
 {
     std::cout << "[ERROR] " << error_message << std::endl;
     std::cout << "\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)) << std::endl;
-    exit(EXIT_FAILURE);
+    exit(errno);
 }
