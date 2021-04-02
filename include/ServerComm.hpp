@@ -1,16 +1,6 @@
 #ifndef SERVER_COMM_HPP
 #define SERVER_COMM_HPP
 
-#include <cstdint>
-#include <unistd.h>
-#include <string>
-#include <cstring>
-#include <thread>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include "ClientUI.hpp"
 #include "Packet.hpp"
 
 class ServerComm {

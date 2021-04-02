@@ -1,7 +1,12 @@
 #include "../include/ServerComm.hpp"
 #include "../include/Signal.hpp"
-#include <mutex>
+
 #include <atomic>
+#include <iostream>
+#include <list>
+#include <mutex>
+
+#include <unistd.h>
 
 std::atomic<bool> quit(false);    // signal flag
 

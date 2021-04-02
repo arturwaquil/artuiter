@@ -1,16 +1,10 @@
 #ifndef CLIENT_COMM_HPP
 #define CLIENT_COMM_HPP
 
-#include <cstdint>
-#include <unistd.h>
-#include <string>
-#include <cstring>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
 #include "ClientUI.hpp"
 #include "Packet.hpp"
+
+#include <string>
 
 class ClientComm {
     public:

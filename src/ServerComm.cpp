@@ -1,5 +1,20 @@
 #include "../include/ServerComm.hpp"
 
+#include "../include/ClientUI.hpp"
+#include "../include/Packet.hpp"
+
+#include <iostream>
+#include <string>
+
+#include <cstdint>
+#include <cstring>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <thread>
+#include <unistd.h>
+
 client_thread_params create_client_thread_params(int new_sockfd, pthread_mutex_t* comm_manager_lock)
 {
     client_thread_params ctp;

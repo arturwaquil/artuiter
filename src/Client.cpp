@@ -1,7 +1,9 @@
-#include "../include/ClientUI.hpp"
 #include "../include/ClientComm.hpp"
+#include "../include/ClientUI.hpp"
 #include "../include/Signal.hpp"
+
 #include <atomic>
+#include <iostream>
 
 std::atomic<bool> quit(false);    // signal flag
 

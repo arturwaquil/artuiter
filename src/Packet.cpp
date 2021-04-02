@@ -1,5 +1,8 @@
-#include <cstring>
 #include "../include/Packet.hpp"
+
+#include <string>
+
+#include <cstring>
 
 packet create_packet(EventType type, uint16_t seqn, uint16_t timestamp, std::string payload)
 {

@@ -1,10 +1,8 @@
 #ifndef UI_HPP
 #define UI_HPP
 
-#include <iostream>
-#include <string>
 #include <list>
-#include <mutex>
+#include <string>
 
 class ClientUI {
     public:

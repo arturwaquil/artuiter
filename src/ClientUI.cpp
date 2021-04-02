@@ -1,5 +1,10 @@
 #include "../include/ClientUI.hpp"
 
+#include <iostream>
+#include <list>
+#include <mutex>
+#include <string>
+
 ClientUI::ClientUI() {
     printing_queue = std::list<std::string>();
     pthread_mutex_init(&mutex, NULL);

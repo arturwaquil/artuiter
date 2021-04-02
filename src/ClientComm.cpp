@@ -1,5 +1,18 @@
 #include "../include/ClientComm.hpp"
 
+#include "../include/ClientUI.hpp"
+#include "../include/Packet.hpp"
+
+#include <string>
+
+#include <cstdint>
+#include <cstring>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+
 ClientComm::ClientComm(std::string _hostname, std::string _port, ClientUI _ui)
 {
     hostname = _hostname;
