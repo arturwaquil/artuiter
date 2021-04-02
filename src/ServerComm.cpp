@@ -15,9 +15,10 @@
 #include <thread>
 #include <unistd.h>
 
-client_thread_params create_client_thread_params(int new_sockfd, pthread_mutex_t* comm_manager_lock)
+client_thread_params create_client_thread_params(std::string username, int new_sockfd, pthread_mutex_t* comm_manager_lock)
 {
     client_thread_params ctp;
+    ctp.username = username;
     ctp.new_sockfd = new_sockfd;
     ctp.comm_manager_lock = comm_manager_lock;
     return ctp;

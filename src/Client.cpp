@@ -14,23 +14,35 @@ void sigIntHandler(int signum)
 
 int main(int argc, char *argv[])
 {
-    if (argc < 3)
+    if (argc < 4)
     {
-        std::cout << "usage: " << argv[0] << " <hostname> <port>\n";
+        std::cout << "usage: " << argv[0] << "<username> <hostname> <port>\n";
         exit(EXIT_SUCCESS);
     }
 
     std::cout << "Initializing client..." << std::endl;
 
     ClientUI ui = ClientUI();
-    ClientComm comm_manager = ClientComm(argv[1], argv[2], ui);
+    ClientComm comm_manager = ClientComm(argv[2], argv[3], ui);
 
     // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sigIntHandler);
 
-    std::cout << "Client initialized." << std::endl;
-
     packet pkt;
+
+    // Send login message, wait for positive reply
+    pkt = create_packet(login, 0, 0, std::string(argv[1]));
+    comm_manager.write_pkt(pkt);
+    comm_manager.read_pkt(&pkt);
+    if (pkt.type == reply_login && pkt.payload == std::string("OK"))
+    {
+        std::cout << "User " << argv[1] << " logged in successfully.\n";
+    }
+    else
+    {
+        std::cout << "[ERROR] Couldn't login.\n";
+        exit(EXIT_FAILURE);
+    }
 
     while(!quit.load())
     {

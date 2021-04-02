@@ -19,6 +19,7 @@ SERVER_DEPS += $(OBJ_DIR)/Server.o
 SERVER_DEPS += $(OBJ_DIR)/ServerComm.o
 SERVER_DEPS += $(OBJ_DIR)/Packet.o
 SERVER_DEPS += $(OBJ_DIR)/Signal.o
+SERVER_DEPS += $(OBJ_DIR)/Profile.o
 app_server: $(SERVER_DEPS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
