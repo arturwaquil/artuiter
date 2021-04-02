@@ -1,3 +1,4 @@
+#include "../include/Database.hpp"
 #include "../include/Profile.hpp"
 #include "../include/ServerComm.hpp"
 #include "../include/Signal.hpp"
@@ -12,18 +13,22 @@
 
 std::atomic<bool> quit(false);    // signal flag
 
-void sigIntHandler(int signum)
+ServerComm comm_manager;
+std::map<std::string, Profile> profiles;    // Store all profiles, indexed by username
+
+void sig_int_handler(int signum)
 {
     // TODO: notify all clients that server is down (i.e. send server_halt message)
+
+    // Update profile/followers info in database
+    json_from_profiles(profiles);
+
     quit.store(true);
 }
 
 void* run_client_threads(void* args);
 void* run_client_cmd_thread(void* args);
 void* run_client_notif_thread(void* args);
-
-ServerComm comm_manager;
-std::map<std::string, Profile> profiles;    // Store all profiles, indexed by username
 
 int main()
 {
@@ -34,10 +39,11 @@ int main()
     pthread_mutex_t comm_manager_lock;
     pthread_mutex_init(&comm_manager_lock, NULL);
 
-    // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
-    set_signal_action(SIGINT, sigIntHandler);
+    // Set sig_int_handler() as the handler for signal SIGINT (ctrl+c)
+    set_signal_action(SIGINT, sig_int_handler);
 
-    // TODO: fetch profile info from database
+    // Fetch profile/followers info from database
+    profiles = profiles_from_json();
 
     std::cout << "Server initialized." << std::endl;
 
