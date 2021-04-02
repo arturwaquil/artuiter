@@ -12,6 +12,8 @@ class ServerComm {
         int write_pkt(int socket, packet pkt);
         int _accept();
 
+        void set_quit();
+
     private:
         int _create();
         int _bind();
@@ -20,8 +22,9 @@ class ServerComm {
         void error(std::string error_message);
 
         int socket_file_descriptor;
-
         int port;
+
+        bool quit;
 };
 
 typedef struct _client_thread_params

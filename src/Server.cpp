@@ -23,6 +23,9 @@ void sig_int_handler(int signum)
     // Update profile/followers info in database
     json_from_profiles(profiles);
 
+    // Set quit flag so that the comm manager exits the accept waiting.
+    comm_manager.set_quit();
+
     quit.store(true);
 }
 
@@ -51,7 +54,6 @@ int main()
     while(!quit.load())
     {
         // Accept first pending connection
-        // TODO: (need to fix) when SIGINT is received, _accept() returns errno 4 (Interrupted system call) 
         int client_sockfd = comm_manager._accept();
 
         client_thread_params ctp = create_client_thread_params(std::string(), client_sockfd, &comm_manager_lock);
@@ -69,7 +71,7 @@ int main()
 
     pthread_mutex_destroy(&comm_manager_lock);
 
-    std::cout << "Exiting..." << std::endl;
+    std::cout << std::endl << "Exiting..." << std::endl;
 
     return 0;
 }

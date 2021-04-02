@@ -99,9 +99,19 @@ int ServerComm::_accept()
     sockaddr_in client_address;
     socklen_t client_address_length = sizeof(struct sockaddr_in);
     int new_sockfd = accept(socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_length);
+    
+    // If the quit flag is set, it means the process received the SIGINT signal, so there is no error.
+    if (quit) return 0;
+
     if (new_sockfd < 0) error("Couldn't accept first connection in the queue.");
 
     return new_sockfd;
+}
+
+// Simply set the quit flag to allow the correct return in _accept()
+void ServerComm::set_quit()
+{
+    quit = true;
 }
 
 // Print error message and exit with EXIT_FAILURE
