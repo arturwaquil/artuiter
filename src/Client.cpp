@@ -22,7 +22,12 @@ int main(int argc, char *argv[])
 
     std::string username = std::string(argv[1]);
 
-    // Assert username size as per the specification
+    // Assert username format (@<username>) and size (4–20) as per the specification
+    if (username[0] != '@')
+    {
+        std::cout << "[ERROR] Must insert an at sign (@) before the username." << std::endl;
+        exit(EXIT_FAILURE);
+    }
     if (username.length() < 5 || username.length() > 21)
     {
         std::cout << "[ERROR] Invalid username. Username must be between 4 and 20 characters long." << std::endl;
