@@ -1,4 +1,3 @@
-#include "../include/Database.hpp"
 #include "../include/Profile.hpp"
 #include "../include/ServerComm.hpp"
 #include "../include/Signal.hpp"
@@ -10,33 +9,21 @@
 #include <map>
 #include <mutex>
 #include <regex>
-#include <semaphore.h>
 
 #include <unistd.h>
 
 std::atomic<bool> quit(false);    // signal flag
 
 ServerComm comm_manager;
-std::map<std::string, Profile> profiles;    // Store all profiles, indexed by username
-std::map<std::string, sem_t*> connections_limit_semaphore_map; // One semaphore for each user
+ProfileManager profile_manager;
 UI ui;
 
 void sig_int_handler(int signum)
 {
     // TODO: notify all clients that server is down (i.e. send server_halt message)
 
-    // Update profile/followers info in database
-    json_from_profiles(profiles);
-
     // Set quit flag so that the comm manager exits the accept waiting.
     comm_manager.set_quit();
-
-    // Free memory from malloc-ed semaphores
-    for (std::pair<const std::string, sem_t *> item : connections_limit_semaphore_map)
-    {
-        sem_t* semaphore = item.second;
-        sem_destroy(semaphore);
-    }
 
     quit.store(true);
 }
@@ -57,23 +44,8 @@ int main()
     // Set sig_int_handler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sig_int_handler);
 
-    // Fetch profile/followers info from database
-    profiles = profiles_from_json();
-
     // Set UI to server comm manager, as it is declared globally
     comm_manager.set_ui(ui);
-
-    // Init the counting-semaphores map to control the number of connections of each user (and keep it <= 2)
-    for (std::pair<const std::string, Profile> item : profiles)
-    {
-        std::string username = std::string(item.first);
-
-        // Create new semaphore allowing two connections
-        sem_t* semaphore = (sem_t*) malloc(sizeof(semaphore));
-        sem_init(semaphore, 0, 2);
-
-        connections_limit_semaphore_map.emplace(username, semaphore);
-    }
 
     ui.write("Server initialized.");
 
@@ -110,7 +82,6 @@ void* run_client_threads(void* args)
     pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 
     packet pkt;
-    sem_t* semaphore;
 
     // Read login-attempt packet from client. Assert that it is of type "login"
     pthread_mutex_lock(&comm_manager_lock);
@@ -128,19 +99,11 @@ void* run_client_threads(void* args)
 
     std::string username = std::string(pkt.payload);
 
-    // If user doesn't exist, create new profile (and new semaphore)
-    if (!search_by_username(profiles, username))
-    {
-        profiles.emplace(username, Profile(username));
-
-        sem_t* semaphore = (sem_t*) malloc(sizeof(semaphore));
-        sem_init(semaphore, 0, 2);
-        connections_limit_semaphore_map.emplace(username, semaphore);
-    }
+    // Create new user if it doesn't exist
+    if (!profile_manager.user_exists(username)) profile_manager.new_user(username);
 
     // If user is already connected twice, send negative reply to client
-    semaphore = connections_limit_semaphore_map[username];
-    if (sem_trywait(semaphore) == -1)
+    if (!profile_manager.trywait_semaphore(username))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
         pthread_mutex_lock(&comm_manager_lock);
@@ -175,7 +138,7 @@ void* run_client_threads(void* args)
     ui.write("User " + username + " logged out.");
 
     // Free a spot in the connection-count semaphore
-    sem_post(semaphore);
+    profile_manager.post_semaphore(username);
 
     return NULL;
 }
@@ -229,11 +192,11 @@ void* run_client_cmd_thread(void* args)
                 {
                     reply = std::string("You can't follow yourself...");
                 }
-                else if (!search_by_username(profiles, target_user))
+                else if (!profile_manager.user_exists(target_user))
                 {
                     reply = std::string("User " + target_user + " doesn't exist.");
                 }
-                else if (is_follower(profiles, username, target_user))
+                else if (profile_manager.is_follower(username, target_user))
                 {
                     reply = std::string("You already follow " + target_user + ".");
                 }
@@ -241,7 +204,7 @@ void* run_client_cmd_thread(void* args)
                 {
                     // If target_user exists and is not equal to username,
                     // add username to target_user's followers list
-                    profiles.at(target_user).followers.push_back(username);
+                    profile_manager.add_follower(username, target_user);
                     ui.write("User " + username + " followed user " + target_user);
                     reply = std::string("Followed user ") + target_user + std::string("!");
                 }
