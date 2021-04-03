@@ -17,7 +17,6 @@ std::atomic<bool> quit(false);    // signal flag
 ServerComm comm_manager;
 ProfileManager profile_manager;
 UI ui;
-std::mutex comm_manager_lock;
 
 void sig_int_handler(int signum)
 {
@@ -79,15 +78,11 @@ void* run_client_threads(void* args)
     packet pkt;
 
     // Read login-attempt packet from client. Assert that it is of type "login"
-    comm_manager_lock.lock();
     comm_manager.read_pkt(sockfd, &pkt);
-    comm_manager_lock.unlock();
     if (pkt.type != login)
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
-        comm_manager_lock.lock();
         comm_manager.write_pkt(sockfd, pkt);
-        comm_manager_lock.unlock();
         close(ctp.new_sockfd);
         return NULL;
     }
@@ -101,9 +96,7 @@ void* run_client_threads(void* args)
     if (!profile_manager.trywait_semaphore(username))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
-        comm_manager_lock.lock();
         comm_manager.write_pkt(sockfd, pkt);
-        comm_manager_lock.unlock();
         close(ctp.new_sockfd);
         return NULL;
     }
@@ -113,9 +106,7 @@ void* run_client_threads(void* args)
 
     // Send positive reply
     pkt = create_packet(reply_login, 0, 0, "OK");
-    comm_manager_lock.lock();
     comm_manager.write_pkt(sockfd, pkt);
-    comm_manager_lock.unlock();
     ui.write("User " + username + " logged in.");
 
     // Run the two client threads (for commands and notifications)
@@ -150,10 +141,7 @@ void* run_client_cmd_thread(void* args)
 
     while(!exit)
     {
-        // TODO: this mutex logic seems wrong...
-        comm_manager_lock.lock();
         comm_manager.read_pkt(sockfd, &pkt);
-        comm_manager_lock.unlock();
 
         if (pkt.type == client_halt) break;
 
@@ -211,9 +199,7 @@ void* run_client_cmd_thread(void* args)
 
             // Send reply to client
             pkt = create_packet(reply_command, 0, 0, reply);
-            comm_manager_lock.lock();
             comm_manager.write_pkt(sockfd, pkt);
-            comm_manager_lock.unlock();
         }
 
     }
