@@ -187,7 +187,10 @@ void* run_client_cmd_thread(void* args)
     pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 
     packet pkt;
-    while(true)
+
+    bool exit = false;
+
+    while(!exit)
     {
         // TODO: this mutex logic seems wrong...
         pthread_mutex_lock(&comm_manager_lock);
@@ -196,13 +199,67 @@ void* run_client_cmd_thread(void* args)
 
         if (pkt.type == client_halt) break;
 
-        ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
-            + std::to_string(pkt.timestamp) + ") from user " + username + ": " + pkt.payload);
+        if (pkt.type == command)
+        {
+            std::string full_message = std::string(pkt.payload);
+            auto first_word_end = full_message.find(" ");
+            std::string first_word = full_message.substr(0, first_word_end);
+            std::string message = full_message.substr(first_word_end+1);
 
-        pkt = create_packet(reply_command, -1, 0, std::string("Message received!"));
-        pthread_mutex_lock(&comm_manager_lock);
-        comm_manager.write_pkt(sockfd, pkt);
-        pthread_mutex_unlock(&comm_manager_lock);
+            if (first_word == "SEND" || first_word == "send")
+            {
+                if (message == std::string() || first_word_end == std::string::npos)
+                {
+                    // Fail message as reply
+                    pkt = create_packet(reply_command, 0, 0, std::string("Command: SEND <message>."));
+                }
+                else
+                {
+                    // TODO: Write message to profiles structure
+                    ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
+                        + std::to_string(pkt.timestamp) + ") from user " + username + ": " + message);
+
+                    // TODO: Positive reply
+                    pkt = create_packet(reply_command, 0, 0, std::string("Message received!"));
+                }
+            }
+            else if (first_word == "FOLLOW" || first_word == "follow")
+            {
+                if (message == std::string() || first_word_end == std::string::npos)
+                {
+                    // Fail message as reply
+                    pkt = create_packet(reply_command, 0, 0, std::string("Command: FOLLOW @<username>."));
+                }
+                else
+                {
+                    // TODO: Add username to desired profile's followers list
+                    ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
+                        + std::to_string(pkt.timestamp) + ") from user " + username + ": " + message);
+
+                    // TODO: Positive reply or negative reply
+                    pkt = create_packet(reply_command, 0, 0, std::string("Followed @<username>!"));
+                }
+            }
+            else if (first_word == "EXIT" || first_word == "exit")
+            {
+                // The exit command is handled on the client side, the same way as the SIGINT signal.
+                // This way it's easier to disconnect both related server threads.
+
+                // Here we only handle cases such as the message "exit <something>", sending a fail message.
+                pkt = create_packet(reply_command, 0, 0, std::string("Command: EXIT."));
+            }
+            else
+            {
+                // Fail message as reply
+                pkt = create_packet(reply_command, 0, 0, std::string("Unknown command."));
+            }
+
+            // Send reply to client
+            pthread_mutex_lock(&comm_manager_lock);
+            comm_manager.write_pkt(sockfd, pkt);
+            pthread_mutex_unlock(&comm_manager_lock);
+        }
+
     }
 
     return NULL;

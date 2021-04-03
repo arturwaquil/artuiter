@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 {
     if (argc < 4)
     {
-        std::cout << "usage: " << argv[0] << "@<username> <hostname> <port>" << std::endl;
+        std::cout << "usage: " << argv[0] << " @<username> <hostname> <port>" << std::endl;
         exit(EXIT_SUCCESS);
     }
 
@@ -66,6 +66,8 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    ui.write("Commands: FOLLOW @<username> | SEND <message> | EXIT");
+
     while(!quit.load())
     {
         // Read message (command) from user. If empty, ignore. If EOF, exit.
@@ -73,17 +75,20 @@ int main(int argc, char *argv[])
         if (std::cin.eof()) break;
         if (message.empty()) continue;
 
+        // Handle exit command similarly to SIGINT
+        if (message == "EXIT" || message == "exit") break;
+
         if (quit.load()) break;
 
         // Send command to server
-        pkt = create_packet(command, 2, 1234, message);
+        pkt = create_packet(command, 0, 1234, message);
         comm_manager.write_pkt(pkt);
 
         if (quit.load()) break;
 
         // Receive server's reply to the command
         comm_manager.read_pkt(&pkt);
-        std::cout << pkt.payload << std::endl;
+        ui.write(pkt.payload);
     }
 
     // Notify server that client is down
