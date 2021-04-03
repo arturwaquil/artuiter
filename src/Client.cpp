@@ -89,6 +89,7 @@ int main(int argc, char *argv[])
         // Receive server's reply to the command
         comm_manager.read_pkt(&pkt);
         ui.write(pkt.payload);
+        if (pkt.payload == std::string("Unknown command.")) ui.write("Commands: FOLLOW @<username> | SEND <message> | EXIT");
     }
 
     // Notify server that client is down
