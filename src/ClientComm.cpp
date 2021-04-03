@@ -1,6 +1,6 @@
 #include "../include/ClientComm.hpp"
 
-#include "../include/ClientUI.hpp"
+#include "../include/UI.hpp"
 #include "../include/Packet.hpp"
 
 #include <string>
@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-ClientComm::ClientComm(std::string _hostname, std::string _port, ClientUI _ui)
+ClientComm::ClientComm(std::string _hostname, std::string _port, UI _ui)
 {
     hostname = _hostname;
     port = _port;

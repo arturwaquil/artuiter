@@ -1,16 +1,16 @@
-#include "../include/ClientUI.hpp"
+#include "../include/UI.hpp"
 
 #include <iostream>
 #include <list>
 #include <mutex>
 #include <string>
 
-ClientUI::ClientUI() {
+UI::UI() {
     printing_queue = std::list<std::string>();
     pthread_mutex_init(&mutex, NULL);
 }
 
-std::string ClientUI::read()
+std::string UI::read()
 {
     pthread_mutex_lock(&mutex);
     std::cout << "> ";
@@ -21,7 +21,7 @@ std::string ClientUI::read()
     return message;
 }
 
-int ClientUI::write(std::string message)
+int UI::write(std::string message)
 {
     pthread_mutex_lock(&mutex);
     std::cout << message << std::endl;

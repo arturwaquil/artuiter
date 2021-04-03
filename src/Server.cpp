@@ -2,6 +2,7 @@
 #include "../include/Profile.hpp"
 #include "../include/ServerComm.hpp"
 #include "../include/Signal.hpp"
+#include "../include/UI.hpp"
 
 #include <atomic>
 #include <iostream>
@@ -17,6 +18,7 @@ std::atomic<bool> quit(false);    // signal flag
 ServerComm comm_manager;
 std::map<std::string, Profile> profiles;    // Store all profiles, indexed by username
 std::map<std::string, sem_t*> connections_limit_semaphore_map; // One semaphore for each user
+UI ui;
 
 void sig_int_handler(int signum)
 {
@@ -57,6 +59,9 @@ int main()
     // Fetch profile/followers info from database
     profiles = profiles_from_json();
 
+    // Set UI to server comm manager, as it is declared globally
+    comm_manager.set_ui(ui);
+
     // Init the counting-semaphores map to control the number of connections of each user (and keep it <= 2)
     for (std::pair<const std::string, Profile> item : profiles)
     {
@@ -69,7 +74,7 @@ int main()
         connections_limit_semaphore_map.emplace(username, semaphore);
     }
 
-    std::cout << "Server initialized." << std::endl;
+    ui.write("Server initialized.");
 
     // Run the server until SIGINT
     while(!quit.load())
@@ -92,7 +97,7 @@ int main()
 
     pthread_mutex_destroy(&comm_manager_lock);
 
-    std::cout << std::endl << "Exiting..." << std::endl;
+    ui.write("\nExiting...");
 
     return 0;
 }
@@ -152,7 +157,7 @@ void* run_client_threads(void* args)
     pthread_mutex_lock(&comm_manager_lock);
     comm_manager.write_pkt(sockfd, pkt);
     pthread_mutex_unlock(&comm_manager_lock);
-    std::cout << "User " << username << " logged in.\n";
+    ui.write("User " + username + " logged in.");
 
     // Run the two client threads (for commands and notifications)
     pthread_t client_cmd_thread;
@@ -189,10 +194,8 @@ void* run_client_cmd_thread(void* args)
 
         if (pkt.type == client_halt) break;
 
-        std::string metadata = std::string("(") + std::to_string(pkt.type) + std::string(",") 
-                                                + std::to_string(pkt.seqn) + std::string(",") 
-                                                + std::to_string(pkt.timestamp) + std::string(")");
-        std::cout << "Message " << metadata << " from user " << username << ": " << pkt.payload << std::endl;
+        ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
+            + std::to_string(pkt.timestamp) + ") from user " + username + ": " + pkt.payload);
 
         pkt = create_packet(reply_command, -1, 0, std::string("Message received!"));
         pthread_mutex_lock(&comm_manager_lock);

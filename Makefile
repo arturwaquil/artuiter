@@ -8,19 +8,20 @@ OBJ_DIR = ./obj
 all: app_client app_server
 
 CLIENT_DEPS += $(OBJ_DIR)/Client.o
-CLIENT_DEPS += $(OBJ_DIR)/ClientUI.o
 CLIENT_DEPS += $(OBJ_DIR)/ClientComm.o
 CLIENT_DEPS += $(OBJ_DIR)/Packet.o
 CLIENT_DEPS += $(OBJ_DIR)/Signal.o
+CLIENT_DEPS += $(OBJ_DIR)/UI.o
 app_client: $(CLIENT_DEPS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 SERVER_DEPS += $(OBJ_DIR)/Server.o
-SERVER_DEPS += $(OBJ_DIR)/ServerComm.o
-SERVER_DEPS += $(OBJ_DIR)/Packet.o
-SERVER_DEPS += $(OBJ_DIR)/Signal.o
-SERVER_DEPS += $(OBJ_DIR)/Profile.o
 SERVER_DEPS += $(OBJ_DIR)/Database.o
+SERVER_DEPS += $(OBJ_DIR)/Packet.o
+SERVER_DEPS += $(OBJ_DIR)/Profile.o
+SERVER_DEPS += $(OBJ_DIR)/ServerComm.o
+SERVER_DEPS += $(OBJ_DIR)/Signal.o
+SERVER_DEPS += $(OBJ_DIR)/UI.o
 app_server: $(SERVER_DEPS)
 	$(CC) -o $@ $^ $(CFLAGS)
 

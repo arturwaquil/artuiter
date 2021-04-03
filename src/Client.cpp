@@ -1,5 +1,5 @@
 #include "../include/ClientComm.hpp"
-#include "../include/ClientUI.hpp"
+#include "../include/UI.hpp"
 #include "../include/Signal.hpp"
 
 #include <atomic>
@@ -22,34 +22,34 @@ int main(int argc, char *argv[])
 
     std::cout << "Initializing client..." << std::endl;
 
-    ClientUI ui = ClientUI();
+    UI ui = UI();
     ClientComm comm_manager = ClientComm(argv[2], argv[3], ui);
 
     // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sigIntHandler);
 
     packet pkt;
+    std::string username = std::string(argv[1]);
 
     // Send login message, wait for positive reply
-    pkt = create_packet(login, 0, 0, std::string(argv[1]));
+    pkt = create_packet(login, 0, 0, username);
     comm_manager.write_pkt(pkt);
     comm_manager.read_pkt(&pkt);
     if (pkt.type == reply_login)
     {
         if (pkt.payload == std::string("OK"))
         {
-            std::cout << "User " << argv[1] << " logged in successfully." << std::endl;
+            ui.write("User " + username + " logged in successfully.");
         }
         else
         {
-            std::cout << "[ERROR] Couldn't login, user " << argv[1] 
-                        << " already has two connections to the server." << std::endl;
+            ui.write("[ERROR] Couldn't login, user " + username + " already has two connections to the server.");
             exit(EXIT_FAILURE);
         }
     }
     else
     {
-        std::cout << "[ERROR] Couldn't login." << std::endl;
+        ui.write("[ERROR] Couldn't login.");
         exit(EXIT_FAILURE);
     }
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     // Notify server that client is down
     comm_manager.write_pkt(create_packet(client_halt, 0, 1234, ""));
 
-    std::cout << std::endl << "Exiting..." << std::endl;
+    ui.write("\nExiting...");
 
     return 0;
 }

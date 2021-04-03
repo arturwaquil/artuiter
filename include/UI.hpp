@@ -4,13 +4,12 @@
 #include <list>
 #include <string>
 
-class ClientUI {
+class UI {
     public:
-        ClientUI();
+        UI();
         std::string read();
         int write(std::string message);
     private:
-        // ~ClientUI();
         std::list<std::string> printing_queue;
         pthread_mutex_t mutex;
 };
