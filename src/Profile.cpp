@@ -17,3 +17,12 @@ bool search_by_username(std::map<std::string, Profile> profiles, std::string use
     auto it = profiles.find(username);
     return it != profiles.end();
 }
+
+bool is_follower(std::map<std::string, Profile> profiles, std::string follower, std::string followed)
+{
+    for (std::string it : profiles.at(followed).followers)
+    {
+        if (it == follower) return true;
+    }
+    return false;
+}

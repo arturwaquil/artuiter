@@ -19,5 +19,6 @@ class Profile
 };
 
 bool search_by_username(std::map<std::string, Profile> profiles, std::string username);
+bool is_follower(std::map<std::string, Profile> profiles, std::string follower, std::string followed);
 
 #endif

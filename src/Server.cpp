@@ -203,37 +203,57 @@ void* run_client_cmd_thread(void* args)
         if (pkt.type == command)
         {
             std::string full_message = std::string(pkt.payload);
-            std::string message = full_message.substr(full_message.find(" ")+1);
 
             // The exit command is handled on the client side, the same way as the SIGINT signal.
             // This way it's easier to disconnect both related server threads.
 
-            if (std::regex_match(full_message, std::regex("(SEND|send) +.+")))
+            std::string reply;
+
+            if (std::regex_match(full_message, std::regex("(SEND|send) .+")))
             {
                 // TODO: Write message to profiles structure
+                std::string message = full_message.substr(full_message.find(" ")+1);
                 ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
                     + std::to_string(pkt.timestamp) + ") from user " + username + ": " + message);
 
                 // TODO: Positive reply
                 pkt = create_packet(reply_command, 0, 0, std::string("Message received!"));
             }
-            else if (std::regex_match(full_message, std::regex("(FOLLOW|follow) +@[a-z]*")))
+            else if (std::regex_match(full_message, std::regex("(FOLLOW|follow) @[a-z]*")))
             {
-                // TODO: Add username to desired profile's followers list
-                ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
-                    + std::to_string(pkt.timestamp) + ") from user " + username + ": " + message);
+                // Add username to desired profile's followers list
 
-                // TODO: Positive reply or negative reply
-                std::string reply = std::string("Followed user ") + message + std::string("!");
-                pkt = create_packet(reply_command, 0, 0, reply);
+                std::string target_user = full_message.substr(full_message.find(" ")+1);
+
+                if (target_user == username)
+                {
+                    reply = std::string("You can't follow yourself...");
+                }
+                else if (!search_by_username(profiles, target_user))
+                {
+                    reply = std::string("User " + target_user + " doesn't exist.");
+                }
+                else if (is_follower(profiles, username, target_user))
+                {
+                    reply = std::string("You already follow " + target_user + ".");
+                }
+                else
+                {
+                    // If target_user exists and is not equal to username,
+                    // add username to target_user's followers list
+                    profiles.at(target_user).followers.push_back(username);
+                    ui.write("User " + username + " followed user " + target_user);
+                    reply = std::string("Followed user ") + target_user + std::string("!");
+                }
+
             }
             else
             {
-                // Fail message as reply
-                pkt = create_packet(reply_command, 0, 0, std::string("Unknown command."));
+                reply = std::string("Unknown command.");
             }
 
             // Send reply to client
+            pkt = create_packet(reply_command, 0, 0, reply);
             pthread_mutex_lock(&comm_manager_lock);
             comm_manager.write_pkt(sockfd, pkt);
             pthread_mutex_unlock(&comm_manager_lock);
