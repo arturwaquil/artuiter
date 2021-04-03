@@ -2,7 +2,6 @@
 #define UI_HPP
 
 #include <list>
-#include <mutex>
 #include <string>
 
 class UI {
@@ -12,7 +11,7 @@ class UI {
         int write(std::string message);
     private:
         std::list<std::string> printing_queue;
-        std::mutex mutex;
+        pthread_mutex_t mutex;
 };
 
 #endif
