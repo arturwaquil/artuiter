@@ -5,14 +5,14 @@
 
 Profile::Profile(std::string _name)
 {
-    name = _name;
-    followers = std::list<std::string>();
+    Profile(_name, std::list<std::string>());
 }
 
 Profile::Profile(std::string _name, std::list<std::string> _followers)
 {
     name = _name;
     followers = _followers;
+    sem_init(&sem_connections_limit, 0, 2);
 }
 
 void Profile::print_info()
@@ -30,13 +30,6 @@ ProfileManager::ProfileManager()
 
 ProfileManager::~ProfileManager()
 {
-    // Free memory from malloc-ed semaphores
-    for (std::pair<const std::string, sem_t *> item : connections_limit_semaphore_map)
-    {
-        sem_t* semaphore = item.second;
-        sem_destroy(semaphore);
-    }
-
     write_to_database();
 }
 
@@ -80,18 +73,12 @@ void ProfileManager::write_to_database()
 
 void ProfileManager::new_user(std::string username)
 {
-    new_user(username, std::list<std::string>());
+    profiles.emplace(username, Profile(username));
 }
 
 void ProfileManager::new_user(std::string username, std::list<std::string> followers)
 {
-    // Add to profiles map
     profiles.emplace(username, Profile(username, followers));
-
-    // Add to semaphores map
-    sem_t* semaphore = (sem_t*) malloc(sizeof(semaphore));
-    sem_init(semaphore, 0, 2);
-    connections_limit_semaphore_map.emplace(username, semaphore);
 }
 
 void ProfileManager::add_follower(std::string follower, std::string followed)
@@ -101,12 +88,12 @@ void ProfileManager::add_follower(std::string follower, std::string followed)
 
 bool ProfileManager::trywait_semaphore(std::string username)
 {
-    return sem_trywait(connections_limit_semaphore_map[username]) != -1;
+    return sem_trywait(&profiles.at(username).sem_connections_limit) != -1;
 }
 
 void ProfileManager::post_semaphore(std::string username)
 {
-    sem_post(connections_limit_semaphore_map[username]);
+    sem_post(&profiles.at(username).sem_connections_limit);
 }
 
 bool ProfileManager::user_exists(std::string username)

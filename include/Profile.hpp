@@ -20,6 +20,8 @@ class Profile
         // TODO: add list of sent notifications (by this profile)
         // TODO: add list of pending notifications (to this profile)
 
+        sem_t sem_connections_limit;
+
         void print_info();
 
 };
@@ -48,7 +50,6 @@ class ProfileManager
     
     private:
         std::map<std::string, Profile> profiles;    // Store all profiles, indexed by username
-        std::map<std::string, sem_t*> connections_limit_semaphore_map; // One semaphore for each user
 
 };
 
