@@ -171,6 +171,8 @@ void* run_client_threads(void* args)
     // When both threads are joined, close the dedicated socket
     close(ctp.new_sockfd);
 
+    ui.write("User " + username + " logged out.");
+
     // Free a spot in the connection-count semaphore
     sem_post(semaphore);
 
