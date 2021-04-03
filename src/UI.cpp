@@ -7,25 +7,24 @@
 
 UI::UI() {
     printing_queue = std::list<std::string>();
-    pthread_mutex_init(&mutex, NULL);
 }
 
 std::string UI::read()
 {
-    pthread_mutex_lock(&mutex);
+    mutex.lock();
     std::cout << "> ";
     std::string message;
     std::getline(std::cin, message);
-    pthread_mutex_unlock(&mutex);
+    mutex.unlock();
 
     return message;
 }
 
 int UI::write(std::string message)
 {
-    pthread_mutex_lock(&mutex);
+    mutex.lock();
     std::cout << message << std::endl;
-    pthread_mutex_unlock(&mutex);
+    mutex.unlock();
 
     return 0;
 }

@@ -17,6 +17,7 @@ std::atomic<bool> quit(false);    // signal flag
 ServerComm comm_manager;
 ProfileManager profile_manager;
 UI ui;
+std::mutex comm_manager_lock;
 
 void sig_int_handler(int signum)
 {
@@ -38,9 +39,6 @@ int main()
 
     std::list<pthread_t> threads = std::list<pthread_t>();
 
-    pthread_mutex_t comm_manager_lock;
-    pthread_mutex_init(&comm_manager_lock, NULL);
-
     // Set sig_int_handler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sig_int_handler);
 
@@ -55,7 +53,7 @@ int main()
         // Accept first pending connection
         int client_sockfd = comm_manager._accept();
 
-        client_thread_params ctp = create_client_thread_params(std::string(), client_sockfd, &comm_manager_lock);
+        client_thread_params ctp = create_client_thread_params(std::string(), client_sockfd);
 
         if (quit.load()) break;
 
@@ -68,8 +66,6 @@ int main()
     // Wait for joining all threads
     for (pthread_t t : threads) pthread_join(t, NULL);
 
-    pthread_mutex_destroy(&comm_manager_lock);
-
     ui.write("\nExiting...");
 
     return 0;
@@ -79,20 +75,19 @@ void* run_client_threads(void* args)
 {
     client_thread_params ctp = *((client_thread_params*)args);
     int sockfd = ctp.new_sockfd;
-    pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 
     packet pkt;
 
     // Read login-attempt packet from client. Assert that it is of type "login"
-    pthread_mutex_lock(&comm_manager_lock);
+    comm_manager_lock.lock();
     comm_manager.read_pkt(sockfd, &pkt);
-    pthread_mutex_unlock(&comm_manager_lock);
+    comm_manager_lock.unlock();
     if (pkt.type != login)
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
-        pthread_mutex_lock(&comm_manager_lock);
+        comm_manager_lock.lock();
         comm_manager.write_pkt(sockfd, pkt);
-        pthread_mutex_unlock(&comm_manager_lock);
+        comm_manager_lock.unlock();
         close(ctp.new_sockfd);
         return NULL;
     }
@@ -106,9 +101,9 @@ void* run_client_threads(void* args)
     if (!profile_manager.trywait_semaphore(username))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
-        pthread_mutex_lock(&comm_manager_lock);
+        comm_manager_lock.lock();
         comm_manager.write_pkt(sockfd, pkt);
-        pthread_mutex_unlock(&comm_manager_lock);
+        comm_manager_lock.unlock();
         close(ctp.new_sockfd);
         return NULL;
     }
@@ -118,9 +113,9 @@ void* run_client_threads(void* args)
 
     // Send positive reply
     pkt = create_packet(reply_login, 0, 0, "OK");
-    pthread_mutex_lock(&comm_manager_lock);
+    comm_manager_lock.lock();
     comm_manager.write_pkt(sockfd, pkt);
-    pthread_mutex_unlock(&comm_manager_lock);
+    comm_manager_lock.unlock();
     ui.write("User " + username + " logged in.");
 
     // Run the two client threads (for commands and notifications)
@@ -148,7 +143,6 @@ void* run_client_cmd_thread(void* args)
     client_thread_params ctp = *((client_thread_params*)args);
     std::string username = ctp.username;
     int sockfd = ctp.new_sockfd;
-    pthread_mutex_t comm_manager_lock = *ctp.comm_manager_lock;
 
     packet pkt;
 
@@ -157,9 +151,9 @@ void* run_client_cmd_thread(void* args)
     while(!exit)
     {
         // TODO: this mutex logic seems wrong...
-        pthread_mutex_lock(&comm_manager_lock);
+        comm_manager_lock.lock();
         comm_manager.read_pkt(sockfd, &pkt);
-        pthread_mutex_unlock(&comm_manager_lock);
+        comm_manager_lock.unlock();
 
         if (pkt.type == client_halt) break;
 
@@ -217,9 +211,9 @@ void* run_client_cmd_thread(void* args)
 
             // Send reply to client
             pkt = create_packet(reply_command, 0, 0, reply);
-            pthread_mutex_lock(&comm_manager_lock);
+            comm_manager_lock.lock();
             comm_manager.write_pkt(sockfd, pkt);
-            pthread_mutex_unlock(&comm_manager_lock);
+            comm_manager_lock.unlock();
         }
 
     }
