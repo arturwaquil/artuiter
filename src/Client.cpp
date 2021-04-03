@@ -34,13 +34,22 @@ int main(int argc, char *argv[])
     pkt = create_packet(login, 0, 0, std::string(argv[1]));
     comm_manager.write_pkt(pkt);
     comm_manager.read_pkt(&pkt);
-    if (pkt.type == reply_login && pkt.payload == std::string("OK"))
+    if (pkt.type == reply_login)
     {
-        std::cout << "User " << argv[1] << " logged in successfully.\n";
+        if (pkt.payload == std::string("OK"))
+        {
+            std::cout << "User " << argv[1] << " logged in successfully." << std::endl;
+        }
+        else
+        {
+            std::cout << "[ERROR] Couldn't login, user " << argv[1] 
+                        << " already has two connections to the server." << std::endl;
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
-        std::cout << "[ERROR] Couldn't login.\n";
+        std::cout << "[ERROR] Couldn't login." << std::endl;
         exit(EXIT_FAILURE);
     }
 
