@@ -16,8 +16,17 @@ int main(int argc, char *argv[])
 {
     if (argc < 4)
     {
-        std::cout << "usage: " << argv[0] << "<username> <hostname> <port>\n";
+        std::cout << "usage: " << argv[0] << "@<username> <hostname> <port>" << std::endl;
         exit(EXIT_SUCCESS);
+    }
+
+    std::string username = std::string(argv[1]);
+
+    // Assert username size as per the specification
+    if (username.length() < 5 || username.length() > 21)
+    {
+        std::cout << "[ERROR] Invalid username. Username must be between 4 and 20 characters long." << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     std::cout << "Initializing client..." << std::endl;
@@ -29,14 +38,6 @@ int main(int argc, char *argv[])
     set_signal_action(SIGINT, sigIntHandler);
 
     packet pkt;
-    std::string username = std::string(argv[1]);
-
-    // Assert username size as per the specification
-    if (username.length() < 4 || username.length() > 20)
-    {
-        ui.write("[ERROR] Invalid username. Username must be between 4 and 20 characters long.");
-        exit(EXIT_FAILURE);
-    }
 
     // Send login message, wait for positive reply
     pkt = create_packet(login, 0, 0, username);
