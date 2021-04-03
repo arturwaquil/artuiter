@@ -31,6 +31,13 @@ int main(int argc, char *argv[])
     packet pkt;
     std::string username = std::string(argv[1]);
 
+    // Assert username size as per the specification
+    if (username.length() < 4 || username.length() > 20)
+    {
+        ui.write("[ERROR] Invalid username. Username must be between 4 and 20 characters long.");
+        exit(EXIT_FAILURE);
+    }
+
     // Send login message, wait for positive reply
     pkt = create_packet(login, 0, 0, username);
     comm_manager.write_pkt(pkt);
