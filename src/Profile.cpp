@@ -26,18 +26,6 @@ void Profile::print_info()
 ProfileManager::ProfileManager()
 {
     read_from_database();
-
-    // Init the counting-semaphores map to control the number of connections of each user (and keep it <= 2)
-    for (std::pair<const std::string, Profile> item : profiles)
-    {
-        std::string username = std::string(item.first);
-
-        // Create new semaphore allowing two connections
-        sem_t* semaphore = (sem_t*) malloc(sizeof(semaphore));
-        sem_init(semaphore, 0, 2);
-
-        connections_limit_semaphore_map.emplace(username, semaphore);
-    }
 }
 
 ProfileManager::~ProfileManager()
@@ -65,7 +53,7 @@ void ProfileManager::read_from_database()
     {
         std::string username = item["username"].get<std::string>();
         auto followers = item["followers"].get<std::list<std::string>>();
-        profiles.emplace(username, Profile(username, followers));
+        new_user(username, followers);
     }
 }
 
