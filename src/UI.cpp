@@ -9,6 +9,11 @@ UI::UI() {
     pthread_mutex_init(&mutex, NULL);
 }
 
+UI::~UI() {
+    pthread_mutex_unlock(&mutex);
+    pthread_mutex_destroy(&mutex);
+}
+
 std::string UI::read()
 {
     pthread_mutex_lock(&mutex);

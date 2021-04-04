@@ -8,11 +8,13 @@
 
 class ClientComm {
     public:
-        ClientComm(std::string _hostname, std::string _port, UI _ui);
+        ClientComm();
+        void init(std::string _hostname, std::string _port, UI _ui);
         ~ClientComm();
-        int get_sockfd();
-        int read_pkt(packet* pkt);
-        int write_pkt(packet pkt);
+        int get_cmd_sockfd();
+        int get_ntf_sockfd();
+        int read_pkt(int socket, packet* pkt);
+        int write_pkt(int socket, packet pkt);
 
     private:
         int _create();
@@ -20,7 +22,8 @@ class ClientComm {
 
         void error(std::string error_message);
 
-        int socket_file_descriptor;
+        int cmd_sockfd;
+        int ntf_sockfd;
 
         std::string hostname;
         std::string port;

@@ -49,10 +49,10 @@ int main()
     // Run the server until SIGINT
     while(!quit.load())
     {
-        // Accept first pending connection
-        int client_sockfd = comm_manager._accept();
+        // Accept first two pending connections
+        std::pair<int,int> sockets = comm_manager._accept();
 
-        client_thread_params ctp = create_client_thread_params(std::string(), client_sockfd);
+        client_thread_params ctp = create_client_thread_params(std::string(), sockets);
 
         if (quit.load()) break;
 
@@ -73,17 +73,18 @@ int main()
 void* run_client_threads(void* args)
 {
     client_thread_params ctp = *((client_thread_params*)args);
-    int sockfd = ctp.new_sockfd;
+    int cmd_sockfd = ctp.sockets.first;
+    int ntf_sockfd = ctp.sockets.second;
 
     packet pkt;
 
     // Read login-attempt packet from client. Assert that it is of type "login"
-    comm_manager.read_pkt(sockfd, &pkt);
+    comm_manager.read_pkt(cmd_sockfd, &pkt);
     if (pkt.type != login)
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
-        comm_manager.write_pkt(sockfd, pkt);
-        close(ctp.new_sockfd);
+        comm_manager.write_pkt(cmd_sockfd, pkt);
+        close(cmd_sockfd);
         return NULL;
     }
 
@@ -96,8 +97,8 @@ void* run_client_threads(void* args)
     if (!profile_manager.trywait_semaphore(username))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
-        comm_manager.write_pkt(sockfd, pkt);
-        close(ctp.new_sockfd);
+        comm_manager.write_pkt(cmd_sockfd, pkt);
+        close(cmd_sockfd);
         return NULL;
     }
 
@@ -106,20 +107,20 @@ void* run_client_threads(void* args)
 
     // Send positive reply
     pkt = create_packet(reply_login, 0, 0, "OK");
-    comm_manager.write_pkt(sockfd, pkt);
+    comm_manager.write_pkt(cmd_sockfd, pkt);
     ui.write("User " + username + " logged in.");
 
     // Run the two client threads (for commands and notifications)
-    pthread_t client_cmd_thread;
-    // pthread_t client_notif_thread;
+    pthread_t client_cmd_thread, client_notif_thread;
     pthread_create(&client_cmd_thread, NULL, run_client_cmd_thread, args);
-    // pthread_create(&client_notif_thread, NULL, run_client_notif_thread, args);
+    pthread_create(&client_notif_thread, NULL, run_client_notif_thread, args);
 
     pthread_join(client_cmd_thread, NULL);
-    // pthread_join(client_notif_thread, NULL);
+    pthread_join(client_notif_thread, NULL);
 
-    // When both threads are joined, close the dedicated socket
-    close(ctp.new_sockfd);
+    // When both threads are joined, close the dedicated sockets
+    close(cmd_sockfd);
+    close(ntf_sockfd);
 
     ui.write("User " + username + " logged out.");
 
@@ -133,15 +134,13 @@ void* run_client_cmd_thread(void* args)
 {
     client_thread_params ctp = *((client_thread_params*)args);
     std::string username = ctp.username;
-    int sockfd = ctp.new_sockfd;
+    int cmd_sockfd = ctp.sockets.first;     // The commands socket
 
     packet pkt;
 
-    bool exit = false;
-
-    while(!exit)
+    while(true)
     {
-        comm_manager.read_pkt(sockfd, &pkt);
+        comm_manager.read_pkt(cmd_sockfd, &pkt);
 
         if (pkt.type == client_halt) break;
 
@@ -156,13 +155,13 @@ void* run_client_cmd_thread(void* args)
 
             if (std::regex_match(full_message, std::regex("(SEND|send) .+")))
             {
-                // TODO: Write message to profiles structure
+                // Post notification (add it to user's sent list and followers' pending lists)
                 std::string message = full_message.substr(full_message.find(" ")+1);
-                ui.write("Message (" + std::to_string(pkt.type) + "," + std::to_string(pkt.seqn) + ","
-                    + std::to_string(pkt.timestamp) + ") from user " + username + ": " + message);
+                profile_manager.send_notification(message, username);
 
-                // TODO: Positive reply
-                pkt = create_packet(reply_command, 0, 0, std::string("Message received!"));
+                ui.write("Message from " + username + ": " + message);
+                
+                reply = std::string("Message received!");
             }
             else if (std::regex_match(full_message, std::regex("(FOLLOW|follow) @[a-z]*")))
             {
@@ -199,7 +198,7 @@ void* run_client_cmd_thread(void* args)
 
             // Send reply to client
             pkt = create_packet(reply_command, 0, 0, reply);
-            comm_manager.write_pkt(sockfd, pkt);
+            comm_manager.write_pkt(cmd_sockfd, pkt);
         }
 
     }
@@ -209,5 +208,22 @@ void* run_client_cmd_thread(void* args)
 
 void* run_client_notif_thread(void* args)
 {
+    client_thread_params ctp = *((client_thread_params*)args);
+    std::string username = ctp.username;
+    int ntf_sockfd = ctp.sockets.second;    // The notifications socket
+
+    packet pkt;
+
+    // TODO: how to exit?
+    while(true)
+    {
+        // listen to profiles' notifications lists
+
+        Notification n = profile_manager.consume_notification(username);
+
+        pkt = create_packet(notification, 0, 0, n.author + ": " + n.message);
+        comm_manager.write_pkt(ntf_sockfd, pkt);
+    }
+
     return NULL;
 }

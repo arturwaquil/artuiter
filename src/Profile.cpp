@@ -86,6 +86,45 @@ void ProfileManager::add_follower(std::string follower, std::string followed)
     profiles.at(followed).followers.push_back(follower);
 }
 
+void ProfileManager::send_notification(std::string message, std::string username)
+{
+    // Create new notification in username's sent_notifications list
+    int pending = profiles.at(username).followers.size();
+    Notification n = Notification(username, message, pending);
+    pthread_mutex_lock(&profiles.at(username).mutex_sent_notifications);
+    profiles.at(username).sent_notifications.emplace(n.id, n);
+    pthread_mutex_unlock(&profiles.at(username).mutex_sent_notifications);
+
+    // Add notification reference to every follower's pending_notifications list
+    // TODO: need to synchronize??
+    for (std::string follower : profiles.at(username).followers)
+    {
+        // pthread_mutex_lock(&profiles.at(follower).mutex_pending_notifications);
+        profiles.at(follower).pending_notifications.push_back(std::make_pair(username, n.id));
+        // pthread_mutex_unlock(&profiles.at(follower).mutex_pending_notifications);
+    }
+}
+
+Notification ProfileManager::consume_notification(std::string username)
+{
+    // Retrieve first notification info from username's pending list
+    while(profiles.at(username).pending_notifications.size() == 0);
+    std::pair<std::string, uint16_t> notif_info = profiles.at(username).pending_notifications.front();
+    profiles.at(username).pending_notifications.pop_front();
+
+    std::string author = notif_info.first;
+    uint16_t id = notif_info.second;
+
+    // Get notification from author and id
+    Notification* n = &profiles.at(author).sent_notifications.at(id);
+
+    // Decrement number of pending clients to send
+    // TODO: should this be atomic?
+    n->pending--;
+    
+    return *n;
+}
+
 bool ProfileManager::trywait_semaphore(std::string username)
 {
     return sem_trywait(&profiles.at(username).sem_connections_limit) != -1;

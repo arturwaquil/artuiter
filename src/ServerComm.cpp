@@ -15,11 +15,11 @@
 #include <thread>
 #include <unistd.h>
 
-client_thread_params create_client_thread_params(std::string username, int new_sockfd)
+client_thread_params create_client_thread_params(std::string username, std::pair<int,int> sockets)
 {
     client_thread_params ctp;
     ctp.username = username;
-    ctp.new_sockfd = new_sockfd;
+    ctp.sockets = sockets;
     return ctp;
 }
 
@@ -98,18 +98,24 @@ int ServerComm::_listen()
 }
 
 // Accept the first in the queue of pending connections
-int ServerComm::_accept()
+std::pair<int,int> ServerComm::_accept()
 {
     sockaddr_in client_address;
     socklen_t client_address_length = sizeof(struct sockaddr_in);
-    int new_sockfd = accept(socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_length);
-    
-    // If the quit flag is set, it means the process received the SIGINT signal, so there is no error.
-    if (quit) return 0;
 
-    if (new_sockfd < 0) error("Couldn't accept first connection in the queue.");
+    // The tests for quit flag is done to make sure the server exits with no error when SIGINT is received.
 
-    return new_sockfd;
+    // Accept first connection request, get client address
+    int cmd_sockfd = accept(socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_length);
+    if (quit) return std::make_pair(0,0);
+
+    // Accept next connection request from the same client address    
+    int ntf_sockfd = accept(socket_file_descriptor, (struct sockaddr *) &client_address, &client_address_length);
+    if (quit) return std::make_pair(0,0);
+
+    if (cmd_sockfd < 0 || ntf_sockfd < 0) error("Couldn't accept first connection in the queue.");
+
+    return std::make_pair(cmd_sockfd, ntf_sockfd);
 }
 
 // Simply set the quit flag to allow the correct return in _accept()

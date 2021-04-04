@@ -6,11 +6,16 @@
 #include <iostream>
 
 std::atomic<bool> quit(false);    // signal flag
+UI ui;
+ClientComm comm_manager;
 
 void sigIntHandler(int signum)
 {
     quit.store(true);
 }
+
+void* cmd_thread(void* args);
+void* ntf_thread(void* args);
 
 int main(int argc, char *argv[])
 {
@@ -36,18 +41,18 @@ int main(int argc, char *argv[])
 
     std::cout << "Initializing client..." << std::endl;
 
-    UI ui = UI();
-    ClientComm comm_manager = ClientComm(argv[2], argv[3], ui);
+    comm_manager.init(argv[2], argv[3], ui);
 
     // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sigIntHandler);
 
     packet pkt;
+    int cmd_sockfd = comm_manager.get_cmd_sockfd();
 
     // Send login message, wait for positive reply
     pkt = create_packet(login, 0, 0, username);
-    comm_manager.write_pkt(pkt);
-    comm_manager.read_pkt(&pkt);
+    comm_manager.write_pkt(cmd_sockfd, pkt);
+    comm_manager.read_pkt(cmd_sockfd, &pkt);
     if (pkt.type == reply_login)
     {
         if (pkt.payload == std::string("OK"))
@@ -68,10 +73,38 @@ int main(int argc, char *argv[])
 
     ui.write("Commands: FOLLOW @<username> | SEND <message> | EXIT");
 
+    // Initialize separate command and notification threads
+    pthread_t cmd_thd, ntf_thd;
+    pthread_create(&cmd_thd, NULL, cmd_thread, NULL);
+    pthread_create(&ntf_thd, NULL, ntf_thread, NULL);
+
+    pthread_join(cmd_thd, NULL);
+    pthread_join(ntf_thd, NULL);
+
+    // Notify server that client is down
+    comm_manager.write_pkt(cmd_sockfd, create_packet(client_halt, 0, 1234, ""));
+
+    ui.write("\nExiting...");
+
+    comm_manager.~ClientComm();
+    ui.~UI();
+    
+    return 0;
+}
+
+void* cmd_thread(void* args)
+{
+    int cmd_sockfd = comm_manager.get_cmd_sockfd();
+    packet pkt;
+
     while(!quit.load())
     {
         // Read message (command) from user. If empty, ignore. If EOF, exit.
+        // TODO: when SIGINT is received, getline() blocks the exit.
         std::string message = ui.read();
+
+        if (quit.load()) break;
+
         if (std::cin.eof()) break;
         if (message.empty()) continue;
 
@@ -82,20 +115,29 @@ int main(int argc, char *argv[])
 
         // Send command to server
         pkt = create_packet(command, 0, 1234, message);
-        comm_manager.write_pkt(pkt);
+        comm_manager.write_pkt(cmd_sockfd, pkt);
 
         if (quit.load()) break;
 
         // Receive server's reply to the command
-        comm_manager.read_pkt(&pkt);
+        comm_manager.read_pkt(cmd_sockfd, &pkt);
         ui.write(pkt.payload);
         if (pkt.payload == std::string("Unknown command.")) ui.write("Commands: FOLLOW @<username> | SEND <message> | EXIT");
     }
 
-    // Notify server that client is down
-    comm_manager.write_pkt(create_packet(client_halt, 0, 1234, ""));
+    return NULL;
+}
 
-    ui.write("\nExiting...");
+void* ntf_thread(void* args)
+{
+    int ntf_sockfd = comm_manager.get_ntf_sockfd();
+    packet pkt;
 
-    return 0;
+    while(!quit.load())
+    {
+        comm_manager.read_pkt(ntf_sockfd, &pkt);
+        if (pkt.type == notification) ui.write(pkt.payload);
+    }
+
+    return NULL;
 }

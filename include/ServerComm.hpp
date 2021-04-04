@@ -12,7 +12,7 @@ class ServerComm {
         int get_sockfd();
         int read_pkt(int socket, packet* pkt);
         int write_pkt(int socket, packet pkt);
-        int _accept();
+        std::pair<int,int> _accept();
 
         void set_quit();
 
@@ -34,10 +34,10 @@ typedef struct _client_thread_params
 {
     std::string username;
     ServerComm* comm_manager;
-    int new_sockfd;
+    std::pair<int,int> sockets;
 
 } client_thread_params;
 
-client_thread_params create_client_thread_params(std::string username, int new_sockfd);
+client_thread_params create_client_thread_params(std::string username, std::pair<int,int> sockets);
 
 #endif

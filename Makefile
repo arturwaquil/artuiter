@@ -16,6 +16,7 @@ app_client: $(CLIENT_DEPS)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 SERVER_DEPS += $(OBJ_DIR)/Server.o
+SERVER_DEPS += $(OBJ_DIR)/Notification.o
 SERVER_DEPS += $(OBJ_DIR)/Packet.o
 SERVER_DEPS += $(OBJ_DIR)/Profile.o
 SERVER_DEPS += $(OBJ_DIR)/ServerComm.o
