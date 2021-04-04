@@ -1,7 +1,6 @@
 #include "../include/Profile.hpp"
 #include "../include/ServerComm.hpp"
 #include "../include/Signal.hpp"
-#include "../include/UI.hpp"
 
 #include <atomic>
 #include <iostream>
@@ -16,7 +15,6 @@ std::atomic<bool> quit(false);    // signal flag
 
 ServerComm comm_manager;
 ProfileManager profile_manager;
-UI ui;
 
 void sig_int_handler(int signum)
 {
@@ -41,10 +39,7 @@ int main()
     // Set sig_int_handler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sig_int_handler);
 
-    // Set UI to server comm manager, as it is declared globally
-    comm_manager.set_ui(ui);
-
-    ui.write("Server initialized.");
+    std::cout << "Server initialized." << std::endl;
 
     // Run the server until SIGINT
     while(!quit.load())
@@ -65,7 +60,7 @@ int main()
     // Wait for joining all threads
     for (pthread_t t : threads) pthread_join(t, NULL);
 
-    ui.write("\nExiting...");
+    std::cout << "\nExiting..." << std::endl;
 
     return 0;
 }
@@ -108,7 +103,7 @@ void* run_client_threads(void* args)
     // Send positive reply
     pkt = create_packet(reply_login, 0, 0, "OK");
     comm_manager.write_pkt(cmd_sockfd, pkt);
-    ui.write("User " + username + " logged in.");
+    std::cout << "User " << username << " logged in." << std::endl;
 
     // Run the two client threads (for commands and notifications)
     pthread_t client_cmd_thread, client_notif_thread;
@@ -122,7 +117,7 @@ void* run_client_threads(void* args)
     close(cmd_sockfd);
     close(ntf_sockfd);
 
-    ui.write("User " + username + " logged out.");
+    std::cout << "User " << username << " logged out." << std::endl;
 
     // Free a spot in the connection-count semaphore
     profile_manager.post_semaphore(username);
@@ -159,7 +154,7 @@ void* run_client_cmd_thread(void* args)
                 std::string message = full_message.substr(full_message.find(" ")+1);
                 profile_manager.send_notification(message, username);
 
-                ui.write("Message from " + username + ": " + message);
+                std::cout << "Message from " << username << ": " << message << std::endl;
                 
                 reply = std::string("Message received!");
             }
@@ -186,7 +181,7 @@ void* run_client_cmd_thread(void* args)
                     // If target_user exists and is not equal to username,
                     // add username to target_user's followers list
                     profile_manager.add_follower(username, target_user);
-                    ui.write("User " + username + " followed user " + target_user);
+                    std::cout << "User " << username << " followed user " << target_user << std::endl;
                     reply = std::string("Followed user ") + target_user + std::string("!");
                 }
 

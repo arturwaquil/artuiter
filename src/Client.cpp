@@ -1,12 +1,12 @@
 #include "../include/ClientComm.hpp"
-#include "../include/UI.hpp"
+#include "../include/ClientUI.hpp"
 #include "../include/Signal.hpp"
 
 #include <atomic>
 #include <iostream>
 
 std::atomic<bool> quit(false);    // signal flag
-UI ui;
+ClientUI ui;
 ClientComm comm_manager;
 
 void sigIntHandler(int signum)
@@ -41,6 +41,9 @@ int main(int argc, char *argv[])
 
     std::cout << "Initializing client..." << std::endl;
 
+    // Initialize ncurses user interface
+    ui.init();
+
     comm_manager.init(argv[2], argv[3], ui);
 
     // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
@@ -57,21 +60,21 @@ int main(int argc, char *argv[])
     {
         if (pkt.payload == std::string("OK"))
         {
-            ui.write("User " + username + " logged in successfully.");
+            ui.update_feed("User " + username + " logged in successfully.");
         }
         else
         {
-            ui.write("[ERROR] Couldn't login, user " + username + " already has two connections to the server.");
+            ui.update_feed("[ERROR] Couldn't login, user " + username + " already has two connections to the server.");
             exit(EXIT_FAILURE);
         }
     }
     else
     {
-        ui.write("[ERROR] Couldn't login.");
+        ui.update_feed("[ERROR] Couldn't login.");
         exit(EXIT_FAILURE);
     }
 
-    ui.write("Commands: FOLLOW @<username> | SEND <message> | EXIT");
+    ui.update_feed("Commands: FOLLOW @<username> | SEND <message> | EXIT");
 
     // Initialize separate command and notification threads
     pthread_t cmd_thd, ntf_thd;
@@ -84,10 +87,10 @@ int main(int argc, char *argv[])
     // Notify server that client is down
     comm_manager.write_pkt(cmd_sockfd, create_packet(client_halt, 0, 1234, ""));
 
-    ui.write("\nExiting...");
+    ui.update_feed("Exiting...");
 
     comm_manager.~ClientComm();
-    ui.~UI();
+    ui.~ClientUI();
     
     return 0;
 }
@@ -101,7 +104,7 @@ void* cmd_thread(void* args)
     {
         // Read message (command) from user. If empty, ignore. If EOF, exit.
         // TODO: when SIGINT is received, getline() blocks the exit.
-        std::string message = ui.read();
+        std::string message = ui.read_command();
 
         if (quit.load()) break;
 
@@ -121,8 +124,8 @@ void* cmd_thread(void* args)
 
         // Receive server's reply to the command
         comm_manager.read_pkt(cmd_sockfd, &pkt);
-        ui.write(pkt.payload);
-        if (pkt.payload == std::string("Unknown command.")) ui.write("Commands: FOLLOW @<username> | SEND <message> | EXIT");
+        ui.update_feed(pkt.payload);
+        if (pkt.payload == std::string("Unknown command.")) ui.update_feed("Commands: FOLLOW @<username> | SEND <message> | EXIT");
     }
 
     return NULL;
@@ -136,7 +139,7 @@ void* ntf_thread(void* args)
     while(!quit.load())
     {
         comm_manager.read_pkt(ntf_sockfd, &pkt);
-        if (pkt.type == notification) ui.write(pkt.payload);
+        if (pkt.type == notification) ui.update_feed(pkt.payload);
     }
 
     return NULL;

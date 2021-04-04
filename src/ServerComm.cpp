@@ -1,6 +1,5 @@
 #include "../include/ServerComm.hpp"
 
-#include "../include/UI.hpp"
 #include "../include/Packet.hpp"
 
 #include <iostream>
@@ -35,11 +34,6 @@ ServerComm::ServerComm()
 ServerComm::~ServerComm()
 {
     close(socket_file_descriptor);
-}
-
-void ServerComm::set_ui(UI _ui)
-{
-    ui = _ui;
 }
 
 int ServerComm::get_sockfd()
@@ -127,6 +121,6 @@ void ServerComm::set_quit()
 // Print error message and exit with EXIT_FAILURE
 void ServerComm::error(std::string error_message)
 {
-    ui.write("[ERROR] " + error_message + "\n\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)));
+    std::cout << "[ERROR] " + error_message + "\n\tErrno " << std::to_string(errno) << ": " << std::string(strerror(errno)) << std::endl;
     exit(errno);
 }

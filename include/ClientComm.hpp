@@ -1,7 +1,7 @@
 #ifndef CLIENT_COMM_HPP
 #define CLIENT_COMM_HPP
 
-#include "UI.hpp"
+#include "ClientUI.hpp"
 #include "Packet.hpp"
 
 #include <string>
@@ -9,7 +9,7 @@
 class ClientComm {
     public:
         ClientComm();
-        void init(std::string _hostname, std::string _port, UI _ui);
+        void init(std::string _hostname, std::string _port, ClientUI _ui);
         ~ClientComm();
         int get_cmd_sockfd();
         int get_ntf_sockfd();
@@ -27,7 +27,7 @@ class ClientComm {
 
         std::string hostname;
         std::string port;
-        UI ui;
+        ClientUI ui;
 };
 
 #endif

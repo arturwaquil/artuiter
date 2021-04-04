@@ -2,13 +2,11 @@
 #define SERVER_COMM_HPP
 
 #include "Packet.hpp"
-#include "UI.hpp"
 
 class ServerComm {
     public:
         ServerComm();
         ~ServerComm();
-        void set_ui(UI _ui);
         int get_sockfd();
         int read_pkt(int socket, packet* pkt);
         int write_pkt(int socket, packet pkt);
@@ -25,7 +23,6 @@ class ServerComm {
 
         int socket_file_descriptor;
         int port;
-        UI ui;
 
         bool quit;
 };
