@@ -13,33 +13,7 @@ Profile::Profile(std::string _name, std::list<std::string> _followers)
     name = _name;
     followers = _followers;
     sem_init(&sem_connections_limit, 0, 2);
-
-    // TODO: (SEM)
-    // sem_connections_limit = 2;
-    // available_connections = 2;
 }
-
-// TODO: (SEM) had implemented a semaphore manually because an error was occurring
-//      when using the sem_t. Will keep this here for a while just in case
-// bool Profile::_sem_try_wait()
-// {
-//     // Acquire the semaphore only if not yet in the connections limit
-//     if (available_connections > 0)
-//     {
-//         available_connections--;
-//         return true;
-//     }
-//     else
-//     {
-//         return false;
-//     }
-// }
-
-// void Profile::_sem_post()
-// {
-//     // Release the semaphore
-//     if (available_connections < sem_connections_limit) available_connections++;
-// }
 
 void Profile::print_info()
 {
@@ -158,15 +132,11 @@ std::string ProfileManager::consume_notification(std::string username)
 bool ProfileManager::trywait_semaphore(std::string username)
 {
     return sem_trywait(&profiles.at(username).sem_connections_limit) != -1;
-    // TODO: (SEM)
-    // return profiles.at(username)._sem_try_wait();
 }
 
 void ProfileManager::post_semaphore(std::string username)
 {
     sem_post(&profiles.at(username).sem_connections_limit);
-    // TODO: (SEM)
-    // profiles.at(username)._sem_post();
 }
 
 bool ProfileManager::user_exists(std::string username)

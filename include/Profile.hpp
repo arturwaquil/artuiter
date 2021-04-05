@@ -27,21 +27,11 @@ class Profile
         std::list<std::pair<std::string, uint16_t>> pending_notifications;
 
         sem_t sem_connections_limit;
-        // TODO: (SEM)
-        // bool _sem_try_wait();
-        // void _sem_post();
         
         pthread_mutex_t mutex_sent_notifications;
         pthread_mutex_t mutex_pending_notifications;
 
         void print_info();
-    
-    // TODO: (SEM)
-    // private:
-    //     int sem_connections_limit;
-    //     int available_connections;
-
-
 };
 
 class ProfileManager

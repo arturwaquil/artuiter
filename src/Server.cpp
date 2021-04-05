@@ -101,7 +101,6 @@ void* run_client_threads(void* args)
     }
 
     // If user is already connected twice, send negative reply to client
-    // TODO: why not working anymore????
     if (!profile_manager.trywait_semaphore(username))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
@@ -243,13 +242,11 @@ void* run_client_notif_thread(void* args)
     {
         quit_flags_mutex.unlock();
 
-        // Listen to profiles' notifications lists
-
         // TODO: deal with multiple sessions of the same user
 
+        // Get message from first notification in queue, if there is one. Empty string is returned
+        // otherwise, so that the busy waiting is done here
         std::string info = profile_manager.consume_notification(username);
-
-        // Ignore invalid notification that is sent to do the busy waiting in this function
         if (info != std::string())
         {
             pkt = create_packet(notification, 0, 0, info);
