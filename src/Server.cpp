@@ -176,7 +176,7 @@ void* run_client_cmd_thread(void* args)
 
                 std::cout << "Message from " << username << ": " << message << std::endl;
                 
-                reply = std::string("Message received!");
+                reply = std::string("Sent message \"") + message + std::string("\".");
             }
             else if (std::regex_match(full_message, std::regex("(FOLLOW|follow) @[a-z]*")))
             {
@@ -208,7 +208,11 @@ void* run_client_cmd_thread(void* args)
             }
             else
             {
-                reply = std::string("Unknown command.");
+                std::string invalid_command;
+                if (full_message.size() > 10) invalid_command = full_message.substr(0,10) + std::string("...");
+                else invalid_command = full_message;
+
+                reply = invalid_command + std::string(" is not a valid command.");
             }
 
             // Send reply to client

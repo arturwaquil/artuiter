@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
     // Initialize ncurses user interface
     ui.init();
     ui.update_feed("User " + username + " logged in successfully.");
-    ui.update_feed("Commands: FOLLOW @<username> | SEND <message> | EXIT");
 
     // Initialize separate command and notification threads
     pthread_t cmd_thd, ntf_thd;
@@ -129,8 +128,7 @@ void* cmd_thread(void* args)
 
         // Receive server's reply to the command
         comm_manager.read_pkt(cmd_sockfd, &pkt);
-        if (pkt.payload == std::string("Unknown command.")) ui.update_feed("Commands: FOLLOW @<username> | SEND <message> | EXIT");
-        else ui.update_feed(pkt.payload);
+        ui.update_feed(pkt.payload);
     }
 
     return NULL;

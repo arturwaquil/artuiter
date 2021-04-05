@@ -197,7 +197,7 @@ void ClientUI::basic_screen()
     move(15,0); addstr("   *                                                                        *   ");
     move(16,0); addstr("   **************************************************************************   ");
     move(17,0); addstr("                                                                                ");
-    move(18,0); addstr("     SEND COMMAND                                                               ");
+    move(18,0); addstr("     SEND COMMAND ( FOLLOW @<username> | SEND <message> | EXIT )                ");
     move(19,0); addstr("   **************************************************************************   ");
     move(20,0); addstr("   *                                                                        *   ");
     move(21,0); addstr("   **************************************************************************   ");
