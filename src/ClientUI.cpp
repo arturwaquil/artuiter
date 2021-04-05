@@ -98,37 +98,36 @@ int ClientUI::update_feed(std::string update)
 {
     feed_lock.lock();
     
-    // Insert update in list, ensure max size of 10
-    last_ten_updates.push_front(update);
-    if (last_ten_updates.size() > 10) last_ten_updates.pop_back();
-
-    // Print last ten updates
-    // TODO: this if-else part will depend on the max length of the tweet
-    // TODO: ensure no overflow at the top of the feed box
-    int row = 15;
-    for (std::string u : last_ten_updates)
+    if ((int) update.size() <= line_width)
     {
-        int len = u.size();
+        // If update fits the width, add it to the list
+        last_ten_updates.push_front(update);
+    }
+    else
+    {
+        // If update is too big, add it in pieces of line_width chars
+        for (int i = 0; i < (int) update.size(); i += line_width)
+        {
+            if ((int) update.size() > i+line_width)
+            {
+                last_ten_updates.push_front(update.substr(i, line_width));
+            }
+            else
+            {
+                last_ten_updates.push_front(update.substr(i));
+            }
+        }
+    }
 
-        if (len <= line_width) 
-        {
-            print(row, 5, u);
-            row--;
-        }
-        else if (len <= 2*line_width)
-        {
-            print(row-1, 5, u.substr(0,line_width));
-            print(row, 5, u.substr(line_width));
-            row -= 2;
-        }
-        else //if (len <= 3*line_width)
-        {
-            print(row-2, 5, u.substr(0,line_width));
-            print(row-1, 5, u.substr(line_width,line_width));
-            print(row, 5, u.substr(2*line_width));
-            row -= 3;
-        }
+    // Keep only the 10 most recent updates
+    while ((int) last_ten_updates.size() > 10) last_ten_updates.pop_back();
 
+    // Print last ten updates bottom-up in the feed
+    int row = 15;
+    for (std::string u : last_ten_updates) 
+    {
+        print(row, 5, u);
+        row--;
     }
 
     feed_lock.unlock();
