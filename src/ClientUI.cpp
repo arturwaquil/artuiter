@@ -16,6 +16,7 @@ bool ncurses_started = false;
 ClientUI::ClientUI()
 {
     _start_curses();
+    quit = false;
 }
 
 ClientUI::~ClientUI()
@@ -43,7 +44,7 @@ std::string ClientUI::read_command()
     timeout(100);   // Time (ms) that getch() waits before returning ERR
     
     // Read input from user until break condition (newline or ctrl+D)
-    while (true)
+    while (!quit)
     {
         ch = getch();
 
@@ -54,9 +55,8 @@ std::string ClientUI::read_command()
         // If ctrl+D (EOF) is received, break from loop and set quit flag to exit client
         else if (ch == CTRL('d'))
         {
-            // TODO: set quit flag to halt the program
-            // quit = true;
-            break;
+            quit = true;
+            return std::string("exit");
         }
 
         // On newline, ignore if no input was given. Break from loop otherwise
@@ -96,6 +96,8 @@ std::string ClientUI::read_command()
 
 int ClientUI::update_feed(std::string update)
 {
+    feed_lock.lock();
+    
     // Insert update in list, ensure max size of 10
     last_ten_updates.push_front(update);
     if (last_ten_updates.size() > 10) last_ten_updates.pop_back();
@@ -128,8 +130,21 @@ int ClientUI::update_feed(std::string update)
         }
 
     }
+
+    feed_lock.unlock();
     
     return 0;
+}
+
+bool ClientUI::quit_flag()
+{
+    return quit;
+}
+
+void ClientUI::set_quit()
+{
+    quit = true;
+    _end_curses();
 }
 
 void ClientUI::_start_curses()
@@ -141,8 +156,7 @@ void ClientUI::_start_curses()
     else
     {
         initscr();
-        noecho();   // TODO: ???
-        // atexit(_end_curses);
+        noecho();   // Do not echo pressed chars on screen (this is done manually)
         ncurses_started = true;
     }
 
@@ -152,6 +166,7 @@ void ClientUI::_end_curses()
 {
     if (ncurses_started && !isendwin())
     {
+        ncurses_started = false;
         endwin();
     }
 }

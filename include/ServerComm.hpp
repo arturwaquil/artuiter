@@ -27,14 +27,4 @@ class ServerComm {
         bool quit;
 };
 
-typedef struct _client_thread_params
-{
-    std::string username;
-    ServerComm* comm_manager;
-    std::pair<int,int> sockets;
-
-} client_thread_params;
-
-client_thread_params create_client_thread_params(std::string username, std::pair<int,int> sockets);
-
 #endif

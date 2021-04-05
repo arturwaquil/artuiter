@@ -11,10 +11,16 @@
 
 #include <unistd.h>
 
-std::atomic<bool> quit(false);    // signal flag
+bool server_quit = false;    // signal flag
 
 ServerComm comm_manager;
 ProfileManager profile_manager;
+
+// Map of quit flags indexed by each client's sockets pair
+std::map<std::pair<int,int>, bool> quit_flags;
+
+// Map of usernames indexed by sockets pair
+std::map<std::pair<int,int>, std::string> usernames_map;
 
 void sig_int_handler(int signum)
 {
@@ -23,7 +29,7 @@ void sig_int_handler(int signum)
     // Set quit flag so that the comm manager exits the accept waiting.
     comm_manager.set_quit();
 
-    quit.store(true);
+    server_quit = true;
 }
 
 void* run_client_threads(void* args);
@@ -42,18 +48,18 @@ int main()
     std::cout << "Server initialized." << std::endl;
 
     // Run the server until SIGINT
-    while(!quit.load())
+    while(!server_quit)
     {
         // Accept first two pending connections
         std::pair<int,int> sockets = comm_manager._accept();
 
-        client_thread_params ctp = create_client_thread_params(std::string(), sockets);
+        if (server_quit) break;
 
-        if (quit.load()) break;
+        quit_flags.emplace(sockets, false);
 
         // Launch new thread to deal with client
         pthread_t client_thread;
-        pthread_create(&client_thread, NULL, run_client_threads, &ctp);
+        pthread_create(&client_thread, NULL, run_client_threads, &sockets);
         threads.push_back(client_thread);
     }
 
@@ -67,9 +73,9 @@ int main()
 
 void* run_client_threads(void* args)
 {
-    client_thread_params ctp = *((client_thread_params*)args);
-    int cmd_sockfd = ctp.sockets.first;
-    int ntf_sockfd = ctp.sockets.second;
+    std::pair<int,int> sockets = *((std::pair<int,int>*)args);
+    int cmd_sockfd = sockets.first;
+    int ntf_sockfd = sockets.second;
 
     packet pkt;
 
@@ -80,25 +86,32 @@ void* run_client_threads(void* args)
         pkt = create_packet(reply_login, 0, 0, "FAILED");
         comm_manager.write_pkt(cmd_sockfd, pkt);
         close(cmd_sockfd);
+        close(ntf_sockfd);
         return NULL;
     }
 
     std::string username = std::string(pkt.payload);
 
     // Create new user if it doesn't exist
-    if (!profile_manager.user_exists(username)) profile_manager.new_user(username);
+    if (!profile_manager.user_exists(username))
+    {
+        std::cout << "Creating new user " << username << std::endl;
+        profile_manager.new_user(username);
+    }
 
     // If user is already connected twice, send negative reply to client
+    // TODO: why not working anymore????
     if (!profile_manager.trywait_semaphore(username))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
         comm_manager.write_pkt(cmd_sockfd, pkt);
         close(cmd_sockfd);
+        close(ntf_sockfd);
         return NULL;
     }
 
-    // Update args so that the client threads receive the username
-    ((client_thread_params*)args)->username = username;
+    // Add username to map indexed by sockets, so that the cmd and ntf threads can access it
+    usernames_map.emplace(sockets, username);
 
     // Send positive reply
     pkt = create_packet(reply_login, 0, 0, "OK");
@@ -122,22 +135,29 @@ void* run_client_threads(void* args)
     // Free a spot in the connection-count semaphore
     profile_manager.post_semaphore(username);
 
+    quit_flags.erase(sockets);
+
     return NULL;
 }
 
 void* run_client_cmd_thread(void* args)
 {
-    client_thread_params ctp = *((client_thread_params*)args);
-    std::string username = ctp.username;
-    int cmd_sockfd = ctp.sockets.first;     // The commands socket
+    std::pair<int,int> sockets = *((std::pair<int,int>*)args);
+    int cmd_sockfd = sockets.first;     // The commands socket
+
+    std::string username = usernames_map.at(sockets);
 
     packet pkt;
 
-    while(true)
+    while(!quit_flags.at(sockets))
     {
         comm_manager.read_pkt(cmd_sockfd, &pkt);
 
-        if (pkt.type == client_halt) break;
+        if (pkt.type == client_halt)
+        {
+            quit_flags[sockets] = true;
+            break;
+        }
 
         if (pkt.type == command)
         {
@@ -203,21 +223,34 @@ void* run_client_cmd_thread(void* args)
 
 void* run_client_notif_thread(void* args)
 {
-    client_thread_params ctp = *((client_thread_params*)args);
-    std::string username = ctp.username;
-    int ntf_sockfd = ctp.sockets.second;    // The notifications socket
+    std::pair<int,int> sockets = *((std::pair<int,int>*)args);
+    int ntf_sockfd = sockets.second;    // The notifications socket
+
+    std::string username = usernames_map.at(sockets);
 
     packet pkt;
 
-    // TODO: how to exit?
-    while(true)
+    while(!quit_flags.at(sockets))
     {
-        // listen to profiles' notifications lists
+        // Listen to profiles' notifications lists
 
-        Notification n = profile_manager.consume_notification(username);
+        // TODO: deal with multiple sessions of the same user
 
-        pkt = create_packet(notification, 0, 0, n.author + ": " + n.message);
-        comm_manager.write_pkt(ntf_sockfd, pkt);
+        std::string info = profile_manager.consume_notification(username);
+
+        // Ignore invalid notification that is sent to do the busy waiting in this function
+        if (info != std::string())
+        {
+            pkt = create_packet(notification, 0, 0, info);
+            comm_manager.write_pkt(ntf_sockfd, pkt);
+        }
+
+        // If the cmd thread sets the quit flag, the ntf thread notifies the ntf thread of the client
+        if (quit_flags[sockets])
+        {
+            pkt = create_packet(client_halt, 0, 0, std::string());
+            comm_manager.write_pkt(ntf_sockfd, pkt);
+        }
     }
 
     return NULL;

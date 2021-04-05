@@ -14,14 +14,6 @@
 #include <thread>
 #include <unistd.h>
 
-client_thread_params create_client_thread_params(std::string username, std::pair<int,int> sockets)
-{
-    client_thread_params ctp;
-    ctp.username = username;
-    ctp.sockets = sockets;
-    return ctp;
-}
-
 ServerComm::ServerComm()
 {
     port = 4000;

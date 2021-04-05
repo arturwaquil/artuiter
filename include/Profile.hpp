@@ -27,11 +27,20 @@ class Profile
         std::list<std::pair<std::string, uint16_t>> pending_notifications;
 
         sem_t sem_connections_limit;
+        // TODO: (SEM)
+        // bool _sem_try_wait();
+        // void _sem_post();
         
         pthread_mutex_t mutex_sent_notifications;
         pthread_mutex_t mutex_pending_notifications;
 
         void print_info();
+    
+    // TODO: (SEM)
+    // private:
+    //     int sem_connections_limit;
+    //     int available_connections;
+
 
 };
 
@@ -49,7 +58,7 @@ class ProfileManager
 
         void add_follower(std::string follower, std::string followed);
         void send_notification(std::string message, std::string username);
-        Notification consume_notification(std::string username);
+        std::string consume_notification(std::string username);
 
         bool trywait_semaphore(std::string username);
         void post_semaphore(std::string username);
