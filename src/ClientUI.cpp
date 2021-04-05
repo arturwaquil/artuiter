@@ -6,6 +6,7 @@
 
 #include <ncurses.h>
 
+// Trick from here: https://stackoverflow.com/a/39960443
 #ifndef CTRL
 #define CTRL(c) ((c) & 037)
 #endif
@@ -50,9 +51,16 @@ std::string ClientUI::read_command()
         // ERR if no input is read. We want to continue waiting for input.
         if (ch == ERR) continue;
 
-        // Break on newline or ctrl+D
-        // TODO: ctrl+D must halt program
-        if (ch == '\n' || ch == CTRL('d'))
+        // If ctrl+D (EOF) is received, break from loop and set quit flag to exit client
+        else if (ch == CTRL('d'))
+        {
+            // TODO: set quit flag to halt the program
+            // quit = true;
+            break;
+        }
+
+        // On newline, ignore if no input was given. Break from loop otherwise
+        else if (ch == '\n')
         {
             if (input.empty()) continue;
             else break;
@@ -100,22 +108,22 @@ int ClientUI::update_feed(std::string update)
     {
         int len = u.size();
 
-        if (len <= 70) 
+        if (len <= line_width) 
         {
             print(row, 5, u);
             row--;
         }
-        else if (len <= 140)
+        else if (len <= 2*line_width)
         {
-            print(row-1, 5, u.substr(0,70));
-            print(row, 5, u.substr(70));
+            print(row-1, 5, u.substr(0,line_width));
+            print(row, 5, u.substr(line_width));
             row -= 2;
         }
-        else //if (len <= 210)
+        else //if (len <= 3*line_width)
         {
-            print(row-2, 5, u.substr(0,70));
-            print(row-1, 5, u.substr(70,70));
-            print(row, 5, u.substr(140));
+            print(row-2, 5, u.substr(0,line_width));
+            print(row-1, 5, u.substr(line_width,line_width));
+            print(row, 5, u.substr(2*line_width));
             row -= 3;
         }
 
@@ -193,7 +201,7 @@ void ClientUI::print(int row, int col, std::string s)
 
     // Fill the end of the line based on the basic screen
     std::string rest = std::string(" *   ");
-    rest.insert(0, 70-s.size(), ' ');
+    rest.insert(0, line_width-s.size(), ' ');
 
     // Print string in desired position
     move(row, col);

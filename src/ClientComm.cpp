@@ -1,8 +1,8 @@
 #include "../include/ClientComm.hpp"
 
-#include "../include/ClientUI.hpp"
 #include "../include/Packet.hpp"
 
+#include <iostream>
 #include <string>
 
 #include <cstdint>
@@ -18,11 +18,10 @@ ClientComm::ClientComm()
 
 }
 
-void ClientComm::init(std::string _hostname, std::string _port, ClientUI _ui)
+void ClientComm::init(std::string _hostname, std::string _port)
 {
     hostname = _hostname;
     port = _port;
-    ui = _ui;
     
     _create();
     _connect();
@@ -91,6 +90,6 @@ int ClientComm::_connect()
 // Print error message and exit with EXIT_FAILURE
 void ClientComm::error(std::string error_message)
 {
-    ui.update_feed("[ERROR] " + error_message + "\n\tErrno " + std::to_string(errno) + ": " + std::string(strerror(errno)));
+    std::cout << "[ERROR] " << error_message << "\n\tErrno " << std::to_string(errno) + ": " << std::string(strerror(errno)) << std::endl;
     exit(errno);
 }

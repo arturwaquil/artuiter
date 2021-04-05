@@ -41,10 +41,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Initializing client..." << std::endl;
 
-    // Initialize ncurses user interface
-    ui.init();
-
-    comm_manager.init(argv[2], argv[3], ui);
+    comm_manager.init(argv[2], argv[3]);
 
     // Set sigIntHandler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sigIntHandler);
@@ -56,23 +53,21 @@ int main(int argc, char *argv[])
     pkt = create_packet(login, 0, 0, username);
     comm_manager.write_pkt(cmd_sockfd, pkt);
     comm_manager.read_pkt(cmd_sockfd, &pkt);
-    if (pkt.type == reply_login)
+    if (pkt.type != reply_login)
     {
-        if (pkt.payload == std::string("OK"))
-        {
-            ui.update_feed("User " + username + " logged in successfully.");
+        std::cout << "[ERROR] Couldn't login." << std::endl;
+        return EXIT_FAILURE;
         }
-        else
+    else if (pkt.payload != std::string("OK"))
         {
-            ui.update_feed("[ERROR] Couldn't login, user " + username + " already has two connections to the server.");
-            exit(EXIT_FAILURE);
+        std::cout << "[ERROR] Couldn't login, user " << username << " already has two connections to the server." << std::endl;
+        return EXIT_FAILURE;
         }
-    }
-    else
-    {
-        ui.update_feed("[ERROR] Couldn't login.");
-        exit(EXIT_FAILURE);
-    }
+
+    // Initialize ncurses user interface
+    ui.init();
+
+    ui.update_feed("User " + username + " logged in successfully.");
 
     ui.update_feed("Commands: FOLLOW @<username> | SEND <message> | EXIT");
 

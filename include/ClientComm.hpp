@@ -9,7 +9,7 @@
 class ClientComm {
     public:
         ClientComm();
-        void init(std::string _hostname, std::string _port, ClientUI _ui);
+        void init(std::string _hostname, std::string _port);
         ~ClientComm();
         int get_cmd_sockfd();
         int get_ntf_sockfd();
@@ -27,7 +27,6 @@ class ClientComm {
 
         std::string hostname;
         std::string port;
-        ClientUI ui;
 };
 
 #endif
