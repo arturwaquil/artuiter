@@ -18,6 +18,7 @@ ProfileManager profile_manager;
 
 // Map of quit flags indexed by each client's sockets pair
 std::map<std::pair<int,int>, bool> quit_flags;
+std::mutex quit_flags_mutex;
 
 // Map of usernames indexed by sockets pair
 std::map<std::pair<int,int>, std::string> usernames_map;
@@ -155,7 +156,9 @@ void* run_client_cmd_thread(void* args)
 
         if (pkt.type == client_halt)
         {
-            quit_flags[sockets] = true;
+            quit_flags_mutex.lock();
+            quit_flags.at(sockets) = true;
+            quit_flags_mutex.unlock();
             break;
         }
 
@@ -234,8 +237,12 @@ void* run_client_notif_thread(void* args)
 
     packet pkt;
 
+    quit_flags_mutex.lock();
+
     while(!quit_flags.at(sockets))
     {
+        quit_flags_mutex.unlock();
+
         // Listen to profiles' notifications lists
 
         // TODO: deal with multiple sessions of the same user
@@ -250,12 +257,16 @@ void* run_client_notif_thread(void* args)
         }
 
         // If the cmd thread sets the quit flag, the ntf thread notifies the ntf thread of the client
-        if (quit_flags[sockets])
+        if (quit_flags.at(sockets))
         {
             pkt = create_packet(client_halt, 0, 0, std::string());
             comm_manager.write_pkt(ntf_sockfd, pkt);
         }
+
+        quit_flags_mutex.lock();
     }
+
+    quit_flags_mutex.unlock();
 
     return NULL;
 }
