@@ -52,7 +52,9 @@ std::string ClientUI::read_command()
         // ERR if no input is read. We want to continue waiting for input.
         if (ch == ERR) continue;
 
-        // If ctrl+D (EOF) is received, break from loop and set quit flag to exit client
+        // If ctrl+D (EOF) is received, break from loop and set quit flag to exit 
+        // client. An "exit" command is returned so that the ctrl+D combination 
+        // is handled the same way in the client
         else if (ch == CTRL('d'))
         {
             quit = true;

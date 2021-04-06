@@ -2,7 +2,6 @@
 #include "../include/ServerComm.hpp"
 #include "../include/Signal.hpp"
 
-#include <atomic>
 #include <iostream>
 #include <list>
 #include <map>
@@ -138,9 +137,7 @@ void* run_client_threads(void* args)
     pthread_create(&client_cmd_thread, NULL, run_client_cmd_thread, args);
     pthread_create(&client_notif_thread, NULL, run_client_notif_thread, args);
 
-    std::cout << "waiting for both\n";
     pthread_join(client_cmd_thread, NULL);
-    std::cout << "waiting for notif\n";
     pthread_join(client_notif_thread, NULL);
 
     // When both threads are joined, close the dedicated sockets
@@ -198,7 +195,6 @@ void* run_client_cmd_thread(void* args)
                 profile_manager.send_notification(message, username);
 
                 std::cout << "Message from " << username << ": " << message << std::endl;
-                
                 reply = std::string("Sent message \"") + message + std::string("\".");
             }
             else if (std::regex_match(full_message, std::regex("(FOLLOW|follow) @[a-z]*")))
@@ -241,7 +237,6 @@ void* run_client_cmd_thread(void* args)
             pkt = create_packet(reply_command, 0, 0, reply);
             comm_manager.write_pkt(cmd_sockfd, pkt);
         }
-
     }
 
     return NULL;

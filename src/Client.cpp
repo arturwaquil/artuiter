@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     std::string username = std::string(argv[1]);
 
     // Assert username format (@<username>) and size (4–20) as per the specification
-    if (!std::regex_match(username, std::regex("@[a-z]{4,20}")))
+    if (!std::regex_match(username, std::regex("@[a-z0-9]{4,20}")))
     {
         if (username[0] != '@')
         {
@@ -107,7 +107,7 @@ void* cmd_thread(void* args)
         // Read message (command) from user. If empty, ignore. If EOF, exit.
         std::string message = ui.read_command();
 
-        // ctrl+C || exit command
+        // ctrl+C || exit command || ctrl+D
         if (should_quit || message == "EXIT" || message == "exit")
         {
             // Notify server that client is down
