@@ -3,11 +3,6 @@
 #include <iostream>
 #include <fstream>
 
-Profile::Profile(std::string _name)
-{
-    Profile(_name, std::list<std::string>());
-}
-
 Profile::Profile(std::string _name, std::list<std::string> _followers)
 {
     name = _name;
@@ -32,11 +27,16 @@ Profile::~Profile()
 
 bool Profile::create_session(skt_pair sockets)
 {
-    // Already connected twice
-    if (sem_trywait(&sem_connections_limit) == -1) return false;
-
     pthread_mutex_lock(&mutex_sessions);
     pthread_mutex_lock(&mutex_pending_notifications);
+
+    // Already connected twice
+    if (sem_trywait(&sem_connections_limit) == -1)
+    {
+        pthread_mutex_unlock(&mutex_pending_notifications);
+        pthread_mutex_unlock(&mutex_sessions);
+        return false;
+    }
 
     sessions.push_back(sockets);
     sessions_pending_notifications.emplace(sockets, std::list<std::string>());
@@ -122,9 +122,7 @@ void ProfileManager::write_to_database()
 
 void ProfileManager::new_user(std::string username)
 {
-    pthread_mutex_lock(&mutex_profiles);
-    profiles.emplace(username, Profile(username));
-    pthread_mutex_unlock(&mutex_profiles);
+    new_user(username, std::list<std::string>());
 }
 
 void ProfileManager::new_user(std::string username, std::list<std::string> followers)
@@ -269,9 +267,9 @@ void ProfileManager::end_session(std::string username, skt_pair sockets)
 bool ProfileManager::user_exists(std::string username)
 {
     pthread_mutex_lock(&mutex_profiles);
-    auto it = profiles.find(username);
+    bool b = (profiles.find(username) != profiles.end());
     pthread_mutex_unlock(&mutex_profiles);
-    return it != profiles.end();
+    return b;
 }
 
 bool ProfileManager::is_follower(std::string follower, std::string followed)

@@ -17,7 +17,6 @@ typedef std::pair<int,int> skt_pair;
 class Profile
 {
     public:
-        Profile(std::string _name);
         Profile(std::string _name, std::list<std::string> _followers);
 
         ~Profile();
