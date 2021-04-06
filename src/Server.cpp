@@ -11,23 +11,36 @@
 
 #include <unistd.h>
 
-bool server_quit = false;    // signal flag
-
 ServerComm comm_manager;
 ProfileManager profile_manager;
 
-// Map of quit flags indexed by each client's sockets pair
-std::map<std::pair<int,int>, bool> quit_flags;
-std::mutex quit_flags_mutex;
-
 // Map of usernames indexed by sockets pair
-std::map<std::pair<int,int>, std::string> usernames_map;
+std::map<skt_pair, std::string> usernames_map;
+
+bool server_quit = false;               // signal flag
+std::map<skt_pair, bool> quit_flags;    // Map of quit flags for each session
+std::mutex quit_flags_mutex;            // Mutex for quit_flags map
+
+// Fetch element from map while respecting the mutex
+bool get_quit_flag(skt_pair sockets)
+{
+    quit_flags_mutex.lock();
+    bool b = quit_flags.at(sockets);
+    quit_flags_mutex.unlock();
+    return b;
+}
+
+// Set element in map while respecting the mutex
+void set_quit_flag(skt_pair sockets, bool b)
+{
+    quit_flags_mutex.lock();
+    quit_flags.at(sockets) = b;
+    quit_flags_mutex.unlock();
+}
 
 void sig_int_handler(int signum)
 {
-    // TODO: notify all clients that server is down (i.e. send server_halt message)
-
-    // Set quit flag so that the comm manager exits the accept waiting.
+    // Set quit flag so that the comm manager exits the accept() waiting.
     comm_manager.set_quit();
 
     server_quit = true;
@@ -52,7 +65,7 @@ int main()
     while(!server_quit)
     {
         // Accept first two pending connections
-        std::pair<int,int> sockets = comm_manager._accept();
+        skt_pair sockets = comm_manager._accept();
 
         if (server_quit) break;
 
@@ -74,7 +87,7 @@ int main()
 
 void* run_client_threads(void* args)
 {
-    std::pair<int,int> sockets = *((std::pair<int,int>*)args);
+    skt_pair sockets = *((skt_pair*)args);
     int cmd_sockfd = sockets.first;
     int ntf_sockfd = sockets.second;
 
@@ -88,6 +101,7 @@ void* run_client_threads(void* args)
         comm_manager.write_pkt(cmd_sockfd, pkt);
         close(cmd_sockfd);
         close(ntf_sockfd);
+        quit_flags.erase(sockets);
         return NULL;
     }
 
@@ -101,12 +115,13 @@ void* run_client_threads(void* args)
     }
 
     // If user is already connected twice, send negative reply to client
-    if (!profile_manager.trywait_semaphore(username))
+    if (!profile_manager.create_session(username, sockets))
     {
         pkt = create_packet(reply_login, 0, 0, "FAILED");
         comm_manager.write_pkt(cmd_sockfd, pkt);
         close(cmd_sockfd);
         close(ntf_sockfd);
+        quit_flags.erase(sockets);
         return NULL;
     }
 
@@ -123,43 +138,49 @@ void* run_client_threads(void* args)
     pthread_create(&client_cmd_thread, NULL, run_client_cmd_thread, args);
     pthread_create(&client_notif_thread, NULL, run_client_notif_thread, args);
 
+    std::cout << "waiting for both\n";
     pthread_join(client_cmd_thread, NULL);
+    std::cout << "waiting for notif\n";
     pthread_join(client_notif_thread, NULL);
 
     // When both threads are joined, close the dedicated sockets
     close(cmd_sockfd);
     close(ntf_sockfd);
 
-    std::cout << "User " << username << " logged out." << std::endl;
-
     // Free a spot in the connection-count semaphore
-    profile_manager.post_semaphore(username);
+    profile_manager.end_session(username, sockets);
 
     quit_flags.erase(sockets);
+
+    std::cout << "User " << username << " logged out." << std::endl;
 
     return NULL;
 }
 
 void* run_client_cmd_thread(void* args)
 {
-    std::pair<int,int> sockets = *((std::pair<int,int>*)args);
+    skt_pair sockets = *((skt_pair*)args);
     int cmd_sockfd = sockets.first;     // The commands socket
 
     std::string username = usernames_map.at(sockets);
 
     packet pkt;
 
-    while(!quit_flags.at(sockets))
+    while(!get_quit_flag(sockets) && !server_quit)
     {
+        // Blocking read, wait for packet
         comm_manager.read_pkt(cmd_sockfd, &pkt);
 
+        // If client sent command to exit, set quit flag for this session
+        // so that the notif thread can exit too
         if (pkt.type == client_halt)
         {
-            quit_flags_mutex.lock();
-            quit_flags.at(sockets) = true;
-            quit_flags_mutex.unlock();
+            set_quit_flag(sockets, true);
             break;
         }
+
+        // If the server wants to exit, break (this is the last step, see comment on server notif thread)
+        if (pkt.type == server_halt) break;
 
         if (pkt.type == command)
         {
@@ -206,7 +227,6 @@ void* run_client_cmd_thread(void* args)
                     std::cout << "User " << username << " followed user " << target_user << std::endl;
                     reply = std::string("Followed user ") + target_user + std::string("!");
                 }
-
             }
             else
             {
@@ -229,41 +249,41 @@ void* run_client_cmd_thread(void* args)
 
 void* run_client_notif_thread(void* args)
 {
-    std::pair<int,int> sockets = *((std::pair<int,int>*)args);
+    skt_pair sockets = *((skt_pair*)args);
     int ntf_sockfd = sockets.second;    // The notifications socket
 
     std::string username = usernames_map.at(sockets);
 
     packet pkt;
 
-    quit_flags_mutex.lock();
-
-    while(!quit_flags.at(sockets))
+    while(!get_quit_flag(sockets) && !server_quit)
     {
-        quit_flags_mutex.unlock();
-
-        // TODO: deal with multiple sessions of the same user
-
         // Get message from first notification in queue, if there is one. Empty string is returned
         // otherwise, so that the busy waiting is done here
-        std::string info = profile_manager.consume_notification(username);
-        if (info != std::string())
-        {
-            pkt = create_packet(notification, 0, 0, info);
-            comm_manager.write_pkt(ntf_sockfd, pkt);
-        }
+        std::string info = profile_manager.consume_notification(username, sockets);
 
         // If the cmd thread sets the quit flag, the ntf thread notifies the ntf thread of the client
-        if (quit_flags.at(sockets))
+        if (get_quit_flag(sockets))
         {
             pkt = create_packet(client_halt, 0, 0, std::string());
             comm_manager.write_pkt(ntf_sockfd, pkt);
         }
 
-        quit_flags_mutex.lock();
-    }
+        // If server receives SIGINT (ctrl+c), the sessions' notif threads send this halting command for the
+        // clients' notif threads, which notify the clients' cmd threads, which notify the server cmd threads
+        if (server_quit)
+        {
+            pkt = create_packet(server_halt, 0, 0, std::string());
+            comm_manager.write_pkt(ntf_sockfd, pkt);
+        }
 
-    quit_flags_mutex.unlock();
+        // If didn't quit, and if not busy waiting, send notification to client
+        if (info != std::string())
+        {
+            pkt = create_packet(notification, 0, 0, info);
+            comm_manager.write_pkt(ntf_sockfd, pkt);
+        }
+    }
 
     return NULL;
 }

@@ -9,6 +9,8 @@
 #include <unistd.h>
 
 bool should_quit = false;    // signal flag
+bool server_exiting = false;
+
 ClientUI ui;
 ClientComm comm_manager;
 
@@ -51,7 +53,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    std::cout << "Initializing client..." << std::endl;
+    std::cout << "Initializing Artuiter..." << std::endl;
 
     // Connect to the server
     comm_manager.init(argv[2], argv[3]);
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
     pthread_join(cmd_thd, NULL);
     pthread_join(ntf_thd, NULL);
 
-    ui.update_feed("Exiting...");
+    std::cout << "Exiting..." << std::endl;;
 
     return 0;
 }
@@ -100,7 +102,7 @@ void* cmd_thread(void* args)
     int cmd_sockfd = comm_manager.get_cmd_sockfd();
     packet pkt;
 
-    while(!should_quit)
+    while(true)
     {
         // Read message (command) from user. If empty, ignore. If EOF, exit.
         std::string message = ui.read_command();
@@ -110,6 +112,13 @@ void* cmd_thread(void* args)
         {
             // Notify server that client is down
             comm_manager.write_pkt(cmd_sockfd, create_packet(client_halt, 0, 0, std::string()));
+            break;
+        }
+
+        if (server_exiting)
+        {
+            // Notify server's cmd thread to exit
+            comm_manager.write_pkt(cmd_sockfd, create_packet(server_halt, 0, 0, std::string()));
             break;
         }
 
@@ -145,6 +154,13 @@ void* ntf_thread(void* args)
 
         // If cmd thread sent halt signal to the server and the server notified the ntf thread
         if (pkt.type == client_halt) break;
+
+        // Server notified that it's exiting. Need to tell client cmd thread to notify server cmd thread
+        else if (pkt.type == server_halt)
+        {
+            server_exiting = true;
+            ui.set_quit();
+        }
         
         // Add notification to client's UI feed
         else if (pkt.type == notification) ui.update_feed(pkt.payload);
