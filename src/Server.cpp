@@ -10,6 +10,9 @@
 
 #include <unistd.h>
 
+// TODO: discover why the execution consumes so much CPU
+// TODO: analyse memory usage...
+
 ServerComm comm_manager;
 ProfileManager profile_manager;
 

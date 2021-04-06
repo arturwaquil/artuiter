@@ -6,6 +6,8 @@
 
 #include <ncurses.h>
 
+// TODO: discover why after client execution the \n character seems to be only LF instead of CR/LF...
+
 // Trick from here: https://stackoverflow.com/a/39960443
 #ifndef CTRL
 #define CTRL(c) ((c) & 037)
@@ -43,6 +45,8 @@ std::string ClientUI::read_command()
 
     timeout(100);   // Time (ms) that getch() waits before returning ERR
     
+    // TODO: deal with command-size limit. Also, deal with two-line input space (see TODO in basic_screen)
+
     // Read input from user until break condition (newline or ctrl+D)
     while (!quit)
     {
@@ -179,7 +183,9 @@ void ClientUI::basic_screen()
     getyx(stdscr, old_y, old_x);
 
     clear();
-    
+
+    // TODO: allow for two-line command input
+
     move( 0,0); addstr("                                                                                ");
     move( 1,0); addstr("                              Welcome to Artuiter!                              ");
     move( 2,0); addstr("                                                                                ");

@@ -25,6 +25,7 @@ typedef struct _packet
     uint16_t seqn;
     uint16_t timestamp;
     char payload[256];
+    // TODO: change max tweet size to 128?
 
 } packet;
 
