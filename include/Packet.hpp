@@ -3,6 +3,8 @@
 
 #include <string>
 
+#define MAX_MESSAGE_SIZE 128
+
 typedef enum
 {
     // client to server
@@ -24,8 +26,7 @@ typedef struct _packet
     EventType type;
     uint16_t seqn;
     uint16_t timestamp;
-    char payload[256];
-    // TODO: change max tweet size to 128?
+    char payload[MAX_MESSAGE_SIZE];
 
 } packet;
 

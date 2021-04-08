@@ -1,5 +1,7 @@
 #include "../include/ClientUI.hpp"
 
+#include "../include/Packet.hpp"
+
 #include <iostream>
 #include <list>
 #include <string>
@@ -29,8 +31,8 @@ ClientUI::~ClientUI()
 void ClientUI::init()
 {
     line_width = 70;
-    command_pos = std::make_pair(20,5);
-    feed_pos = std::make_pair(15,5);
+    command_pos = std::make_pair(19,5);
+    feed_pos = std::make_pair(14,5);
 
     basic_screen();
 
@@ -45,8 +47,6 @@ std::string ClientUI::read_command()
 
     timeout(100);   // Time (ms) that getch() waits before returning ERR
     
-    // TODO: deal with command-size limit. Also, deal with two-line input space (see TODO in basic_screen)
-
     // Read input from user until break condition (newline or ctrl+D)
     while (!quit)
     {
@@ -82,20 +82,37 @@ std::string ClientUI::read_command()
                 addch(' ');
                 int y, x;
                 getyx(stdscr, y, x);
-                move(y, x-1);
+
+                // If reached start of second line, move to end of first
+                if (y == command_pos.first+1 && x == command_pos.second) 
+                {
+                    move(command_pos.first, command_pos.second+line_width);
+                }
+                else
+                {
+                    move(y, x-1);
+                }
             }
         }
+
+        // Ignore chars that surpass the maximum message size
+        else if (input.size() == MAX_MESSAGE_SIZE) continue;
 
         // Add char to input string
         else
         {
             input.push_back(ch);
+
+            // If reached end of first line, move to start of second
+            if ((int) input.size() == line_width+1) move(command_pos.first+1, command_pos.second);
+
             addch(ch);
         }
     }
 
     // Clear command-input part of the screen
     print(command_pos, "");
+    print(command_pos.first+1, command_pos.second, "");
 
     return input;
 }
@@ -129,10 +146,10 @@ int ClientUI::update_feed(std::string update)
     while ((int) last_ten_updates.size() > 10) last_ten_updates.pop_back();
 
     // Print last ten updates bottom-up in the feed
-    int row = 15;
+    int row = feed_pos.first;
     for (std::string u : last_ten_updates) 
     {
-        print(row, 5, u);
+        print(row, feed_pos.second, u);
         row--;
     }
 
@@ -184,14 +201,12 @@ void ClientUI::basic_screen()
 
     clear();
 
-    // TODO: allow for two-line command input
-
     move( 0,0); addstr("                                                                                ");
     move( 1,0); addstr("                              Welcome to Artuiter!                              ");
     move( 2,0); addstr("                                                                                ");
-    move( 3,0); addstr("                                                                                ");
-    move( 4,0); addstr("     YOUR FEED                                                                  ");
-    move( 5,0); addstr("   **************************************************************************   ");
+    move( 3,0); addstr("     YOUR FEED                                                                  ");
+    move( 4,0); addstr("   **************************************************************************   ");
+    move( 5,0); addstr("   *                                                                        *   ");
     move( 6,0); addstr("   *                                                                        *   ");
     move( 7,0); addstr("   *                                                                        *   ");
     move( 8,0); addstr("   *                                                                        *   ");
@@ -201,11 +216,11 @@ void ClientUI::basic_screen()
     move(12,0); addstr("   *                                                                        *   ");
     move(13,0); addstr("   *                                                                        *   ");
     move(14,0); addstr("   *                                                                        *   ");
-    move(15,0); addstr("   *                                                                        *   ");
-    move(16,0); addstr("   **************************************************************************   ");
-    move(17,0); addstr("                                                                                ");
-    move(18,0); addstr("     SEND COMMAND ( FOLLOW @<username> | SEND <message> | EXIT )                ");
-    move(19,0); addstr("   **************************************************************************   ");
+    move(15,0); addstr("   **************************************************************************   ");
+    move(16,0); addstr("                                                                                ");
+    move(17,0); addstr("     SEND COMMAND ( FOLLOW @<username> | SEND <message> | EXIT )                ");
+    move(18,0); addstr("   **************************************************************************   ");
+    move(19,0); addstr("   *                                                                        *   ");
     move(20,0); addstr("   *                                                                        *   ");
     move(21,0); addstr("   **************************************************************************   ");
     move(22,0); addstr("                                                                                ");
