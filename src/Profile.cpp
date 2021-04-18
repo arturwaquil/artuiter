@@ -139,10 +139,47 @@ void ProfileManager::add_follower(std::string follower, std::string followed)
     Profile* p = &profiles.at(followed);
 
     pthread_mutex_lock(&p->mutex_followers);
-    profiles.at(followed).followers.push_back(follower);
+    p->followers.push_back(follower);
     pthread_mutex_unlock(&p->mutex_followers);
 
     pthread_mutex_unlock(&mutex_profiles);
+}
+
+void ProfileManager::remove_follower(std::string follower, std::string followed)
+{
+    pthread_mutex_lock(&mutex_profiles);
+
+    Profile* p = &profiles.at(followed);
+
+    pthread_mutex_lock(&p->mutex_followers);
+    p->followers.remove(follower);
+    pthread_mutex_unlock(&p->mutex_followers);
+
+    pthread_mutex_unlock(&mutex_profiles);
+}
+
+std::list<std::string> ProfileManager::list_followers(std::string username)
+{
+    pthread_mutex_lock(&mutex_profiles);
+
+    Profile* p = &profiles.at(username);
+
+    std::list<std::string> followers;
+
+    pthread_mutex_lock(&p->mutex_followers);
+    for (auto follower : p->followers) followers.push_back(follower);
+    pthread_mutex_unlock(&p->mutex_followers);
+
+    pthread_mutex_unlock(&mutex_profiles);
+
+    return followers;
+}
+
+std::list<std::string> ProfileManager::list_following(std::string username)
+{
+    // TODO: should we keep the following list in each user? Or should this
+    // function sweep every user's followers list searching for username?
+    return std::list<std::string>();
 }
 
 void ProfileManager::send_notification(std::string message, std::string username)

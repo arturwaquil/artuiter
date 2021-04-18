@@ -31,7 +31,7 @@ ClientUI::~ClientUI()
 void ClientUI::init()
 {
     line_width = 70;
-    command_pos = std::make_pair(19,5);
+    command_pos = std::make_pair(20,5);
     feed_pos = std::make_pair(14,5);
 
     basic_screen();
@@ -218,12 +218,12 @@ void ClientUI::basic_screen()
     move(14,0); addstr("   *                                                                        *   ");
     move(15,0); addstr("   **************************************************************************   ");
     move(16,0); addstr("                                                                                ");
-    move(17,0); addstr("     SEND COMMAND ( FOLLOW @<username> | SEND <message> | EXIT )                ");
-    move(18,0); addstr("   **************************************************************************   ");
-    move(19,0); addstr("   *                                                                        *   ");
+    move(17,0); addstr("     COMMANDS  ( SEND <message> | FOLLOWERS | FOLLOWING                         ");
+    move(18,0); addstr("               | FOLLOW @<username> | UNFOLLOW @<username> | EXIT )             ");
+    move(19,0); addstr("   **************************************************************************   ");
     move(20,0); addstr("   *                                                                        *   ");
-    move(21,0); addstr("   **************************************************************************   ");
-    move(22,0); addstr("                                                                                ");
+    move(21,0); addstr("   *                                                                        *   ");
+    move(22,0); addstr("   **************************************************************************   ");
     move(23,0); addstr("                                                                                ");
 
     // Move back to previous position

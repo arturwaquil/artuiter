@@ -227,6 +227,73 @@ void* run_client_cmd_thread(void* args)
                     reply = std::string("Followed user ") + target_user + std::string("!");
                 }
             }
+            else if (std::regex_match(full_message, std::regex("(UNFOLLOW|unfollow) @[a-z]*")))
+            {
+                // Remove username from desired profile's followers list
+
+                std::string target_user = full_message.substr(full_message.find(" ")+1);
+
+                if (target_user == username)
+                {
+                    reply = std::string("You can't unfollow yourself...");
+                }
+                else if (!profile_manager.user_exists(target_user))
+                {
+                    reply = std::string("User " + target_user + " doesn't exist.");
+                }
+                else if (profile_manager.is_follower(username, target_user))
+                {
+                    profile_manager.remove_follower(username, target_user);
+                    std::cout << "User " << username << " unfollowed user " << target_user << std::endl;
+                    reply = std::string("Unfollowed user ") + target_user + std::string("!");
+                }
+                else
+                {
+                    reply = std::string("You don't follow " + target_user + ".");
+                }
+            }
+            else if (std::regex_match(full_message, std::regex("(FOLLOWERS|followers)")))
+            {
+                // List user's followers
+
+                std::list<std::string> followers = profile_manager.list_followers(username);
+                
+                if (followers.empty())
+                {
+                    reply = std::string("You have no followers yet. :(");
+                }
+                else
+                {
+                    reply = std::string("Your followers: ");
+
+                    for (std::string follower : followers)
+                    {
+                        reply = reply + follower + std::string(", ");
+                    }
+                    reply = reply.substr(0,reply.size()-2) + ".";
+                }   
+            }
+            else if (std::regex_match(full_message, std::regex("(FOLLOWING|following)")))
+            {
+                // List profiles the user follows
+
+                std::list<std::string> following = profile_manager.list_following(username);
+                
+                if (following.empty())
+                {
+                    reply = std::string("You're not following anybody. To follow someone use the command FOLLOW @<username>.");
+                }
+                else
+                {
+                    reply = std::string("Profiles you follow: ");
+                    
+                    for (std::string profile : following)
+                    {
+                        reply = reply + profile + std::string(", ");
+                    }
+                    reply = reply.substr(0,reply.size()-2) + ".";
+                }
+            }
             else
             {
                 std::string invalid_command;

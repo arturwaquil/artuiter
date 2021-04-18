@@ -63,6 +63,9 @@ class ProfileManager
         void new_user(std::string username, std::list<std::string> followers);
 
         void add_follower(std::string follower, std::string followed);
+        void remove_follower(std::string follower, std::string followed);
+        std::list<std::string> list_followers(std::string username);
+        std::list<std::string> list_following(std::string username);
         void send_notification(std::string message, std::string username);
         std::string consume_notification(std::string username, skt_pair sockets);
 
