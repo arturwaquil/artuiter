@@ -1,11 +1,11 @@
 #ifndef CLIENT_UI_HPP
 #define CLIENT_UI_HPP
 
+#include "Typedefs.hpp"
+
 #include <list>
 #include <mutex>
 #include <string>
-
-typedef std::pair<int,int> position;
 
 class ClientUI {
     public:
@@ -34,7 +34,7 @@ class ClientUI {
 
         int line_width;
 
-        std::list<std::string> last_ten_updates;
+        str_list last_ten_updates;
         std::mutex feed_lock;
 
         bool quit;

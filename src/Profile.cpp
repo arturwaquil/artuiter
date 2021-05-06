@@ -3,7 +3,7 @@
 #include <iostream>
 #include <fstream>
 
-Profile::Profile(std::string _name, std::list<std::string> _followers)
+Profile::Profile(std::string _name, str_list _followers)
 {
     name = _name;
     followers = _followers;
@@ -39,7 +39,7 @@ bool Profile::create_session(skt_pair sockets)
     }
 
     sessions.push_back(sockets);
-    sessions_pending_notifications.emplace(sockets, std::list<std::string>());
+    sessions_pending_notifications.emplace(sockets, str_list());
 
     pthread_mutex_unlock(&mutex_pending_notifications);
     pthread_mutex_unlock(&mutex_sessions);
@@ -95,7 +95,7 @@ void ProfileManager::read_from_database()
     for (auto item : j)
     {
         std::string username = item["_username"].get<std::string>();
-        auto followers = item["followers"].get<std::list<std::string>>();
+        auto followers = item["followers"].get<str_list>();
         new_user(username, followers);
     }
 }
@@ -124,10 +124,10 @@ void ProfileManager::write_to_database()
 
 void ProfileManager::new_user(std::string username)
 {
-    new_user(username, std::list<std::string>());
+    new_user(username, str_list());
 }
 
-void ProfileManager::new_user(std::string username, std::list<std::string> followers)
+void ProfileManager::new_user(std::string username, str_list followers)
 {
     pthread_mutex_lock(&mutex_profiles);
     profiles.emplace(username, Profile(username, followers));
@@ -160,13 +160,13 @@ void ProfileManager::remove_follower(std::string follower, std::string followed)
     pthread_mutex_unlock(&mutex_profiles);
 }
 
-std::list<std::string> ProfileManager::list_followers(std::string username)
+str_list ProfileManager::list_followers(std::string username)
 {
     pthread_mutex_lock(&mutex_profiles);
 
     Profile* p = &profiles.at(username);
 
-    std::list<std::string> followers;
+    str_list followers;
 
     pthread_mutex_lock(&p->mutex_followers);
     for (auto follower : p->followers) followers.push_back(follower);
@@ -177,11 +177,11 @@ std::list<std::string> ProfileManager::list_followers(std::string username)
     return followers;
 }
 
-std::list<std::string> ProfileManager::list_following(std::string username)
+str_list ProfileManager::list_following(std::string username)
 {
     // TODO: should we keep the following list in each user? Or should this
     // function sweep every user's followers list searching for username?
-    return std::list<std::string>();
+    return str_list();
 }
 
 void ProfileManager::send_notification(std::string message, std::string username)
@@ -221,7 +221,7 @@ std::string ProfileManager::consume_notification(std::string username, skt_pair 
     Profile* p = &profiles.at(username);
     pthread_mutex_lock(&p->mutex_sessions_pending_notifications);
 
-    std::list<std::string>* session_pending_list = &p->sessions_pending_notifications.at(sockets);
+    str_list* session_pending_list = &p->sessions_pending_notifications.at(sockets);
 
     std::string ret;
 

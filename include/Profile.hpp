@@ -2,6 +2,7 @@
 #define PROFILE_HPP
 
 #include "Notification.hpp"
+#include "Typedefs.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -11,13 +12,10 @@
 
 #include <semaphore.h>
 
-typedef std::pair<std::string, uint16_t> notif_info;
-typedef std::pair<int,int> skt_pair;
-
 class Profile
 {
     public:
-        Profile(std::string _name, std::list<std::string> _followers);
+        Profile(std::string _name, str_list _followers);
 
         ~Profile();
 
@@ -25,7 +23,7 @@ class Profile
         void end_session(skt_pair sockets);
 
         std::string name;
-        std::list<std::string> followers;
+        str_list followers;
 
         std::list<skt_pair> sessions;
 
@@ -37,7 +35,7 @@ class Profile
         std::list<notif_info> pending_notifications;
 
         // Each session has a list of pending notifications
-        std::map<skt_pair, std::list<std::string>> sessions_pending_notifications;
+        std::map<skt_pair, str_list> sessions_pending_notifications;
 
         sem_t sem_connections_limit;
 
@@ -60,12 +58,12 @@ class ProfileManager
         void write_to_database();
 
         void new_user(std::string username);
-        void new_user(std::string username, std::list<std::string> followers);
+        void new_user(std::string username, str_list followers);
 
         void add_follower(std::string follower, std::string followed);
         void remove_follower(std::string follower, std::string followed);
-        std::list<std::string> list_followers(std::string username);
-        std::list<std::string> list_following(std::string username);
+        str_list list_followers(std::string username);
+        str_list list_following(std::string username);
         void send_notification(std::string message, std::string username);
         std::string consume_notification(std::string username, skt_pair sockets);
 

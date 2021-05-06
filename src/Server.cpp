@@ -256,7 +256,7 @@ void* run_client_cmd_thread(void* args)
             {
                 // List user's followers
 
-                std::list<std::string> followers = profile_manager.list_followers(username);
+                str_list followers = profile_manager.list_followers(username);
                 
                 if (followers.empty())
                 {
@@ -277,7 +277,7 @@ void* run_client_cmd_thread(void* args)
             {
                 // List profiles the user follows
 
-                std::list<std::string> following = profile_manager.list_following(username);
+                str_list following = profile_manager.list_following(username);
                 
                 if (following.empty())
                 {
