@@ -1,1 +1,27 @@
-{"@ana":{"followers":["@eduardo","@joao"],"username":"@ana"},"@eduardo":{"followers":["@maria"],"username":"@eduardo"},"@joao":{"followers":[],"username":"@joao"},"@maria":{"followers":["@joao","@eduardo","@ana"],"username":"@maria"}}
+[
+  {
+    "_username": "@ana",
+    "followers": [
+      "@eduardo",
+      "@joao"
+    ]
+  },
+  {
+    "_username": "@eduardo",
+    "followers": [
+      "@maria"
+    ]
+  },
+  {
+    "_username": "@joao",
+    "followers": []
+  },
+  {
+    "_username": "@maria",
+    "followers": [
+      "@joao",
+      "@eduardo",
+      "@ana"
+    ]
+  }
+]

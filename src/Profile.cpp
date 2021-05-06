@@ -70,6 +70,7 @@ void Profile::print_info()
 
 ProfileManager::ProfileManager()
 {
+    database_location = "/home/artur/Documents/ufrgs/20-2/sisop2/trabalho/artuiter/data/database.json";
     read_from_database();
     
     pthread_mutex_init(&mutex_profiles, NULL);
@@ -85,7 +86,7 @@ ProfileManager::~ProfileManager()
 void ProfileManager::read_from_database()
 {
     // Read JSON structure from file
-    std::ifstream file("/home/artur/Documents/ufrgs/20-2/sisop2/trabalho/artuiter/data/database.json");
+    std::ifstream file(database_location);
     nlohmann::json j;
     file >> j;
     file.close();
@@ -93,7 +94,7 @@ void ProfileManager::read_from_database()
     // Fill profiles map with info from JSON
     for (auto item : j)
     {
-        std::string username = item["username"].get<std::string>();
+        std::string username = item["_username"].get<std::string>();
         auto followers = item["followers"].get<std::list<std::string>>();
         new_user(username, followers);
     }
@@ -103,21 +104,22 @@ void ProfileManager::write_to_database()
 {
     nlohmann::json j;
 
-    // Convert from list of Profiles to JSON
+    // Convert from list of Profiles to JSON list
     for (auto item : profiles)
     {
         std::string username = item.first;
         Profile profile = item.second;
 
-        j[username] = {
-            {"username", username},
+        j.push_back({
+            {"_username", username},
             {"followers", profile.followers}
-        };
+        });
     }
 
     // Save to file
-    std::ofstream file("/home/artur/Documents/ufrgs/20-2/sisop2/trabalho/artuiter/data/database.json");
-    file << j;
+    std::ofstream file(database_location);
+    file << j.dump(2);
+    file.close();
 }
 
 void ProfileManager::new_user(std::string username)

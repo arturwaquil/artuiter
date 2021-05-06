@@ -80,6 +80,7 @@ class ProfileManager
         void print_profiles();
     
     private:
+        std::string database_location;
         std::map<std::string, Profile> profiles;    // Store all profiles, indexed by username
         pthread_mutex_t mutex_profiles;
 
