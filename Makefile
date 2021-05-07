@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -Wall -lpthread -lncurses
+CFLAGS = -O2 -Wall -lpthread -lncurses
 SRC_DIR = ./src
 OBJ_DIR = ./obj
 
