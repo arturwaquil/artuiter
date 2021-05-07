@@ -15,7 +15,7 @@
 class Profile
 {
     public:
-        Profile(std::string _name, str_list _followers);
+        Profile(std::string _name, str_list _followers, str_list _following);
 
         ~Profile();
 
@@ -24,6 +24,7 @@ class Profile
 
         std::string name;
         str_list followers;
+        str_list following;
 
         std::list<skt_pair> sessions;
 
@@ -40,6 +41,7 @@ class Profile
         sem_t sem_connections_limit;
 
         pthread_mutex_t mutex_followers;
+        pthread_mutex_t mutex_following;
         pthread_mutex_t mutex_sessions;
         pthread_mutex_t mutex_sent_notifications;
         pthread_mutex_t mutex_pending_notifications;
@@ -58,7 +60,7 @@ class ProfileManager
         void write_to_database();
 
         void new_user(std::string username);
-        void new_user(std::string username, str_list followers);
+        void new_user(std::string username, str_list followers, str_list following);
 
         void add_follower(std::string follower, std::string followed);
         void remove_follower(std::string follower, std::string followed);

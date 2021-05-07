@@ -4,24 +4,52 @@
     "followers": [
       "@eduardo",
       "@joao"
+    ],
+    "following": [
+      "@maria"
+    ]
+  },
+  {
+    "_username": "@artur",
+    "followers": [
+      "@maria"
+    ],
+    "following": [
+      "@joao",
+      "@maria"
     ]
   },
   {
     "_username": "@eduardo",
     "followers": [
       "@maria"
+    ],
+    "following": [
+      "@maria"
     ]
   },
   {
     "_username": "@joao",
-    "followers": []
+    "followers": [
+      "@artur",
+      "@maria"
+    ],
+    "following": [
+      "@maria"
+    ]
   },
   {
     "_username": "@maria",
     "followers": [
       "@joao",
       "@eduardo",
-      "@ana"
+      "@ana",
+      "@artur"
+    ],
+    "following": [
+      "@eduardo",
+      "@artur",
+      "@joao"
     ]
   }
 ]
