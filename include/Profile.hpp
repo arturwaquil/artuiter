@@ -12,6 +12,9 @@
 
 #include <semaphore.h>
 
+// Structure <author, notif_id> used to keep references to notifications in pending list
+typedef std::pair<std::string, uint16_t> notif_info;
+
 class Profile
 {
     public:

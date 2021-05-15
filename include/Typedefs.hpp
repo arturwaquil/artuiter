@@ -4,20 +4,11 @@
 #include <list>
 #include <string>
 
-// General
-
+// String-related. For conciseness only
 typedef std::list<std::string> str_list;
 typedef std::pair<std::string, std::string> str_pair;
 
-
-// Profile.hpp
-
-typedef std::pair<std::string, uint16_t> notif_info;
+// Used to keep both sockets' (cmd and ntf) info in one structure.
 typedef std::pair<int,int> skt_pair;
-
-
-// ClientUI.hpp
-
-typedef std::pair<int,int> position;
 
 #endif

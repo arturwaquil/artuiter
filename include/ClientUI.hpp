@@ -7,6 +7,8 @@
 #include <mutex>
 #include <string>
 
+typedef std::pair<int,int> position;
+
 class ClientUI {
     public:
         ClientUI();

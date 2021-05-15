@@ -1,6 +1,6 @@
 #include "../include/ServerComm.hpp"
-
 #include "../include/Packet.hpp"
+#include "../include/Typedefs.hpp"
 
 #include <iostream>
 #include <string>
@@ -84,7 +84,7 @@ int ServerComm::_listen()
 }
 
 // Accept the first in the queue of pending connections
-std::pair<int,int> ServerComm::_accept()
+skt_pair ServerComm::_accept()
 {
     sockaddr_in client_address;
     socklen_t client_address_length = sizeof(struct sockaddr_in);
