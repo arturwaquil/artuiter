@@ -2,10 +2,7 @@
 
 #include "../include/Packet.hpp"
 
-#include <nlohmann/json.hpp>
-
 #include <iostream>
-#include <fstream>
 #include <map>
 #include <string>
 
@@ -17,14 +14,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-ClientComm::ClientComm()
-{
-
-}
-
 void ClientComm::init()
 {
-    read_servers_info();
+    GeneralComm::init();
+
     _create();
     _connect_to_primary();
 }
@@ -42,35 +35,6 @@ int ClientComm::get_cmd_sockfd()
 int ClientComm::get_ntf_sockfd()
 {
     return ntf_sockfd;
-}
-
-int ClientComm::read_pkt(int socket, packet* pkt)
-{
-    bzero(pkt, sizeof(*pkt));
-    int n = read(socket, pkt, sizeof(*pkt));
-    if (n < 0) error("Couldn't read packet from socket.");
-    return 0;
-}
-
-int ClientComm::write_pkt(int socket, packet pkt)
-{
-    int n = write(socket, &pkt, sizeof(pkt));
-    if (n < 0) error("Couldn't write packet to socket.");
-    return 0;
-}
-
-// Retrieve servers' info (IP and port) from config file
-void ClientComm::read_servers_info()
-{
-    // Read JSON structure from file
-    std::ifstream file("data/servers.json");
-    nlohmann::json j;
-    file >> j;
-    file.close();
-
-    for (auto item : j) servers_info[item["id"]] = std::make_pair(item["ip"], item["port"]);
-
-    if (servers_info.empty()) error("Couldn't retrieve server info.");
 }
 
 int ClientComm::_create()
@@ -147,11 +111,4 @@ void ClientComm::_disconnect()
 {
     close(cmd_sockfd);
     close(ntf_sockfd);
-}
-
-// Print error message and exit with EXIT_FAILURE
-void ClientComm::error(std::string error_message)
-{
-    std::cout << "[ERROR] " << error_message << "\n\tErrno " << std::to_string(errno) + ": " << std::string(strerror(errno)) << std::endl;
-    exit(errno);
 }

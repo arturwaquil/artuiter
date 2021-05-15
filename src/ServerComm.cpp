@@ -14,8 +14,9 @@
 #include <thread>
 #include <unistd.h>
 
-ServerComm::ServerComm()
+void ServerComm::init(int id)
 {
+    GeneralComm::init();
     port = 4000;
     
     _create();
@@ -31,21 +32,6 @@ ServerComm::~ServerComm()
 int ServerComm::get_sockfd()
 {
     return socket_file_descriptor;
-}
-
-int ServerComm::read_pkt(int socket, packet* pkt)
-{
-    bzero(pkt, sizeof(*pkt));
-    int n = read(socket, pkt, sizeof(*pkt));
-    if (n < 0) error("Couldn't read packet from socket.");
-    return 0;
-}
-
-int ServerComm::write_pkt(int socket, packet pkt)
-{
-    int n = write(socket, &pkt, sizeof(pkt));
-    if (n < 0) error("Couldn't write packet to socket.");
-    return 0;
 }
 
 int ServerComm::_create()
@@ -108,11 +94,4 @@ skt_pair ServerComm::_accept()
 void ServerComm::set_quit()
 {
     quit = true;
-}
-
-// Print error message and exit with EXIT_FAILURE
-void ServerComm::error(std::string error_message)
-{
-    std::cout << "[ERROR] " + error_message + "\n\tErrno " << std::to_string(errno) << ": " << std::string(strerror(errno)) << std::endl;
-    exit(errno);
 }
