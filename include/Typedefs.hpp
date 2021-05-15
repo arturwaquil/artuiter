@@ -7,6 +7,7 @@
 // General
 
 typedef std::list<std::string> str_list;
+typedef std::pair<std::string, std::string> str_pair;
 
 
 // Profile.hpp

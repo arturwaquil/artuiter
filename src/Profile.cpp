@@ -73,7 +73,7 @@ void Profile::print_info()
 
 ProfileManager::ProfileManager()
 {
-    database_location = "/home/artur/Documents/ufrgs/20-2/sisop2/trabalho/artuiter/data/database.json";
+    database_location = "data/database.json";
     read_from_database();
     
     pthread_mutex_init(&mutex_profiles, NULL);

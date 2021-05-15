@@ -12,12 +12,14 @@ typedef enum
     command,
     client_halt,
     reply_notification,
+    ask_primary,
 
     // server to client
     notification,
     server_halt,
     reply_login,
-    reply_command
+    reply_command,
+    reply_primary
 
 } EventType;
 
