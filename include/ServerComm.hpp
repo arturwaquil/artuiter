@@ -12,6 +12,7 @@ class ServerComm : public GeneralComm {
         void init(int id);
 
         int get_sockfd();
+        std::string get_address_string();
 
         skt_pair _accept();
         void set_quit();
@@ -22,7 +23,9 @@ class ServerComm : public GeneralComm {
         int _listen();
 
         int socket_file_descriptor;
-        int port;
+
+        int server_id;
+        std::string ip, port;
 
         bool quit;
 };

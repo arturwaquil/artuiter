@@ -9,6 +9,7 @@
 #include <cstring>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
@@ -17,7 +18,15 @@
 void ServerComm::init(int id)
 {
     GeneralComm::init();
-    port = 4000;
+
+    // Assert that a valid id was passed
+    if (id < 1 || id > (int) servers_info.size())
+        error("Server id must be between 1 and " + std::to_string(servers_info.size()) + ".");
+
+    ip = servers_info[id].first;
+    port = servers_info[id].second;
+
+    server_id = id;
     
     _create();
     _bind();
@@ -34,30 +43,29 @@ int ServerComm::get_sockfd()
     return socket_file_descriptor;
 }
 
+std::string ServerComm::get_address_string()
+{
+    return ip + ":" + port;
+}
+
 int ServerComm::_create()
 {
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_file_descriptor < 0) error("Couldn't create socket.");
-
-    // Set socket option to allow address reuse
-    int enable = 1;
-    if (setsockopt(socket_file_descriptor, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-        error("Couldn't set socket option to allow address reuse.");
-
     return 0;
 }
 
-// Bind server to the desired port (hardcoded port 4000)
+// Bind server to the specified address and port
 int ServerComm::_bind()
 {
     sockaddr_in server_address;
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(port);
-    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(stoi(port));
+    server_address.sin_addr.s_addr = inet_addr(ip.c_str());
     bzero(&(server_address.sin_zero), 8);     
     
     int binded = bind(socket_file_descriptor, (struct sockaddr *) &server_address, sizeof(server_address));
-    if (binded < 0) error("Couldn't bind server to port 4000.");
+    if (binded < 0) error("Couldn't bind server at " + get_address_string() + ".");
 
     return 0;
 }

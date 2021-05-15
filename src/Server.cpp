@@ -49,16 +49,28 @@ void* run_client_threads(void* args);
 void* run_client_cmd_thread(void* args);
 void* run_client_notif_thread(void* args);
 
-int main()
+int main(int argc, char *argv[])
 {
+    if (argc != 2)
+    {
+        std::cout << "usage: " << argv[0] << " <id>" << std::endl;
+        return EXIT_SUCCESS;
+    }
+
     std::cout << "Initializing server..." << std::endl;
+
+    // Initialize communications manager based on id and info from config file
+    int server_id = atoi(argv[1]);
+    comm_manager.init(server_id);
 
     std::list<pthread_t> threads = std::list<pthread_t>();
 
     // Set sig_int_handler() as the handler for signal SIGINT (ctrl+c)
     set_signal_action(SIGINT, sig_int_handler);
 
-    std::cout << "Server initialized." << std::endl;
+    std::cout << "Server initialized at " << comm_manager.get_address_string() << "." << std::endl;
+
+    // TODO: Start election to see if it will be primary or backup
 
     // Run the server until SIGINT
     while(!server_quit)
