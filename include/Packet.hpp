@@ -19,7 +19,12 @@ typedef enum
     server_halt,
     reply_login,
     reply_command,
-    reply_primary
+    reply_primary,
+
+    // server to server (election-related)
+    election_begin,
+    election_answer,
+    election_coordinator
 
 } EventType;
 

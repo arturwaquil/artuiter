@@ -17,6 +17,8 @@ class ServerComm : public GeneralComm {
         skt_pair _accept();
         void set_quit();
 
+        bool is_primary();
+
     private:
         int _create();
         int _bind();
@@ -24,7 +26,7 @@ class ServerComm : public GeneralComm {
 
         int socket_file_descriptor;
 
-        int server_id;
+        int server_id, primary_id;
         std::string ip, port;
 
         bool quit;

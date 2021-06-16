@@ -48,6 +48,11 @@ std::string ServerComm::get_address_string()
     return ip + ":" + port;
 }
 
+bool ServerComm::is_primary()
+{
+    return server_id == primary_id;
+}
+
 int ServerComm::_create()
 {
     socket_file_descriptor = socket(AF_INET, SOCK_STREAM, 0);

@@ -72,6 +72,14 @@ int main(int argc, char *argv[])
 
     // TODO: Start election to see if it will be primary or backup
 
+    while (!server_quit)
+    {
+        if (comm_manager.is_primary())
+            primary_function();
+        else
+            backup_function();
+    }
+
     // Run the server until SIGINT
     while(!server_quit)
     {
